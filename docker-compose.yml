@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://sub.hyper-vpn.ru/api}
+        VITE_ADMIN_USERNAME: ${VITE_ADMIN_USERNAME:-admin}
+        VITE_ADMIN_PASSWORD: ${VITE_ADMIN_PASSWORD}
+    container_name: hyper-vpn-frontend
+    ports:
+      - "127.0.0.1:8080:80"  # Только локально, через Nginx на хосте
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
