@@ -1,140 +1,119 @@
-import axios, { AxiosInstance } from 'axios';
+import axios from 'axios';
 
-const API_BASE_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
-class ApiService {
-  private api: AxiosInstance;
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
-  constructor() {
-    this.api = axios.create({
-      baseURL: API_BASE_URL,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    // Add token to requests
-    this.api.interceptors.request.use((config) => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    });
-
-    // Handle 401 errors
-    this.api.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (error.response?.status === 401) {
-          localStorage.removeItem('token');
-          window.location.href = '/login';
-        }
-        return Promise.reject(error);
-      }
-    );
-  }
-
-  // Auth
-  async login(username: string, password: string) {
-    const { data } = await this.api.post('/auth/login', { username, password });
-    return data;
-  }
-
-  // Servers
-  async getServers() {
-    const { data } = await this.api.get('/servers');
-    return data;
-  }
-
-  async getServer(id: string) {
-    const { data } = await this.api.get(`/servers/${id}`);
-    return data;
-  }
-
-  async createServer(serverData: any) {
-    const { data } = await this.api.post('/servers', serverData);
-    return data;
-  }
-
-  async updateServer(id: string, serverData: any) {
-    const { data } = await this.api.patch(`/servers/${id}`, serverData);
-    return data;
-  }
-
-  async deleteServer(id: string) {
-    await this.api.delete(`/servers/${id}`);
-  }
-
-  // Users
-  async getUsers() {
-    const { data } = await this.api.get('/users');
-    return data;
-  }
-
-  async getUser(id: string) {
-    const { data } = await this.api.get(`/users/${id}`);
-    return data;
-  }
-
-  async createUser(userData: any) {
-    const { data } = await this.api.post('/users', userData);
-    return data;
-  }
-
-  async updateUser(id: string, userData: any) {
-    const { data } = await this.api.patch(`/users/${id}`, userData);
-    return data;
-  }
-
-  async deleteUser(id: string) {
-    await this.api.delete(`/users/${id}`);
-  }
-
-  // Subscriptions
-  async getSubscriptions() {
-    const { data } = await this.api.get('/subscriptions');
-    return data;
-  }
-
-  async getSubscription(id: string) {
-    const { data } = await this.api.get(`/subscriptions/${id}`);
-    return data;
-  }
-
-  async getUserSubscriptions(userId: string) {
-    const { data } = await this.api.get(`/subscriptions/user/${userId}`);
-    return data;
-  }
-
-  async createSubscription(subscriptionData: any) {
-    const { data } = await this.api.post('/subscriptions', subscriptionData);
-    return data;
-  }
-
-  async updateSubscription(id: string, subscriptionData: any) {
-    const { data } = await this.api.patch(`/subscriptions/${id}`, subscriptionData);
-    return data;
-  }
-
-  async deleteSubscription(id: string) {
-    await this.api.delete(`/subscriptions/${id}`);
-  }
-
-  async extendSubscription(id: string, months: number) {
-    const { data } = await this.api.post(`/subscriptions/${id}/extend`, { months });
-    return data;
-  }
-
-  async changeSubscriptionServer(id: string, serverId: string) {
-    const { data } = await this.api.post(`/subscriptions/${id}/change-server`, { serverId });
-    return data;
-  }
-
-  async getStatistics() {
-    const { data } = await this.api.get('/subscriptions/statistics');
-    return data;
-  }
+// Types
+export interface Client {
+  id: string;
+  telegramId: string;
+  username: string | null;
+  firstName: string | null;
+  isActive: boolean;
+  createdAt: string;
 }
 
-export default new ApiService();
+export interface ServerPool {
+  id: number;
+  name: string;
+  description: string | null;
+  isActive: boolean;
+  servers?: XuiServer[];
+}
+
+export interface XuiServer {
+  id: number;
+  name: string;
+  apiUrl: string;
+  publicHost: string;
+  publicPort: number;
+  status: string;
+  usersLimit: number;
+  serverPoolId: number | null;
+  serverPool?: ServerPool;
+}
+
+export interface Subscription {
+  id: string;
+  clientId: string;
+  status: string;
+  months: number;
+  startDate: string;
+  endDate: string;
+  createdAt: string;
+}
+
+export interface CreateSubscriptionDto {
+  telegramId: string;
+  username?: string;
+  firstName?: string;
+  months: number;
+}
+
+export interface CreatePoolDto {
+  name: string;
+  description?: string;
+  isActive?: boolean;
+}
+
+export interface CreateServerDto {
+  name: string;
+  apiUrl: string;
+  username: string;
+  password: string;
+  publicHost: string;
+  publicPort?: number;
+  security?: string;
+  pbk: string;
+  fp?: string;
+  sni: string;
+  sid: string;
+  spx?: string;
+  flow?: string;
+  serverPoolId?: number;
+  usersLimit?: number;
+}
+
+// API methods
+export const clientsAPI = {
+  getAll: () => api.get<Client[]>('/clients'),
+  getById: (id: string) => api.get<Client>(`/clients/${id}`),
+  create: (data: { telegramId: string; username?: string; firstName?: string }) =>
+    api.post<Client>('/clients', data),
+  update: (id: string, data: Partial<Client>) => api.put<Client>(`/clients/${id}`, data),
+  delete: (id: string) => api.delete(`/clients/${id}`),
+};
+
+export const poolsAPI = {
+  getAll: () => api.get<ServerPool[]>('/server-pools'),
+  getById: (id: number) => api.get<ServerPool>(`/server-pools/${id}`),
+  create: (data: CreatePoolDto) => api.post<ServerPool>('/server-pools', data),
+  update: (id: number, data: Partial<CreatePoolDto>) => 
+    api.put<ServerPool>(`/server-pools/${id}`, data),
+  delete: (id: number) => api.delete(`/server-pools/${id}`),
+};
+
+export const serversAPI = {
+  getAll: () => api.get<XuiServer[]>('/server-pools/servers'),
+  getById: (id: number) => api.get<XuiServer>(`/server-pools/servers/${id}`),
+  create: (data: CreateServerDto) => api.post<XuiServer>('/server-pools/servers', data),
+  update: (id: number, data: Partial<CreateServerDto>) => 
+    api.put<XuiServer>(`/server-pools/servers/${id}`, data),
+  delete: (id: number) => api.delete(`/server-pools/servers/${id}`),
+};
+
+export const subscriptionsAPI = {
+  getAll: () => api.get<Subscription[]>('/subscriptions'),
+  getByTelegramId: (telegramId: string) => 
+    api.get<Subscription[]>(`/subscriptions/telegram/${telegramId}`),
+  create: (data: CreateSubscriptionDto) => api.post('/subscriptions', data),
+  processExpired: () => api.post('/subscriptions/process-expired'),
+};
+
+export default api;

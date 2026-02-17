@@ -1,52 +1,38 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from '@/contexts/AuthContext';
-import Login from '@/pages/Login';
-import Dashboard from '@/pages/Dashboard';
-import Servers from '@/pages/Servers';
-import Subscriptions from '@/pages/Subscriptions';
-import Users from '@/pages/Users';
-import Layout from '@/components/Layout';
-import { Spin } from 'antd';
-
-const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <Spin size="large" />
-      </div>
-    );
-  }
-
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
-};
-
-function AppRoutes() {
-  return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route
-        path="/"
-        element={
-          <PrivateRoute>
-            <Layout />
-          </PrivateRoute>
-        }
-      >
-        <Route index element={<Dashboard />} />
-        <Route path="servers" element={<Servers />} />
-        <Route path="subscriptions" element={<Subscriptions />} />
-        <Route path="users" element={<Users />} />
-      </Route>
-    </Routes>
-  );
-}
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import LoginPage from './pages/LoginPage';
+import DashboardLayout from './components/DashboardLayout';
+import ClientsPage from './pages/ClientsPage';
+import ServersPage from './pages/ServersPage';
+import PoolsPage from './pages/PoolsPage';
+import SubscriptionsPage from './pages/SubscriptionsPage';
 
 function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/clients" replace />} />
+            <Route path="clients" element={<ClientsPage />} />
+            <Route path="servers" element={<ServersPage />} />
+            <Route path="pools" element={<PoolsPage />} />
+            <Route path="subscriptions" element={<SubscriptionsPage />} />
+          </Route>
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
     </AuthProvider>
   );
 }

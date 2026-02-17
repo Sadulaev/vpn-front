@@ -1,49 +1,47 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import api from '@/services/api';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => boolean;
   logout: () => void;
-  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return localStorage.getItem('isAuthenticated') === 'true';
+  });
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
+  const login = (username: string, password: string): boolean => {
+    // Статичные credentials из .env
+    const adminUsername = import.meta.env.VITE_ADMIN_USERNAME || 'admin';
+    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'admin123';
+
+    if (username === adminUsername && password === adminPassword) {
       setIsAuthenticated(true);
+      localStorage.setItem('isAuthenticated', 'true');
+      return true;
     }
-    setLoading(false);
-  }, []);
-
-  const login = async (username: string, password: string) => {
-    const { access_token } = await api.login(username, password);
-    localStorage.setItem('token', access_token);
-    setIsAuthenticated(true);
+    return false;
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
     setIsAuthenticated(false);
+    localStorage.removeItem('isAuthenticated');
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout, loading }}>
+    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
   }
   return context;
 };
