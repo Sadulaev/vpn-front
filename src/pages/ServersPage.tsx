@@ -210,6 +210,24 @@ const ServersPage = () => {
 
           <Space style={{ width: '100%' }}>
             <Form.Item
+              name="webBasePath"
+              label="Web Base Path"
+              style={{ width: 200 }}
+            >
+              <Input placeholder="dashboard" />
+            </Form.Item>
+
+            <Form.Item
+              name="inboundId"
+              label="Inbound ID"
+              style={{ width: 150 }}
+            >
+              <InputNumber min={1} style={{ width: '100%' }} placeholder="1" />
+            </Form.Item>
+          </Space>
+
+          <Space style={{ width: '100%' }}>
+            <Form.Item
               name="username"
               label="Username"
               rules={[{ required: true }]}
@@ -233,13 +251,21 @@ const ServersPage = () => {
               name="publicHost"
               label="Публичный хост"
               rules={[{ required: true }]}
-              style={{ width: 400 }}
+              style={{ width: 300 }}
             >
               <Input placeholder="vpn.example.com" />
             </Form.Item>
 
             <Form.Item name="publicPort" label="Порт" style={{ width: 120 }}>
               <InputNumber min={1} max={65535} style={{ width: '100%' }} />
+            </Form.Item>
+
+            <Form.Item name="security" label="Security" style={{ width: 150 }}>
+              <Select>
+                <Select.Option value="reality">reality</Select.Option>
+                <Select.Option value="tls">tls</Select.Option>
+                <Select.Option value="none">none</Select.Option>
+              </Select>
             </Form.Item>
           </Space>
 

@@ -31,8 +31,19 @@ export interface XuiServer {
   id: number;
   name: string;
   apiUrl: string;
+  webBasePath?: string;
+  username?: string;
+  password?: string;
+  inboundId?: number;
   publicHost: string;
   publicPort: number;
+  security?: string;
+  pbk?: string;
+  fp?: string;
+  sni?: string;
+  sid?: string;
+  spx?: string;
+  flow?: string;
   status: string;
   usersLimit: number;
   serverPoolId: number | null;
@@ -65,8 +76,10 @@ export interface CreatePoolDto {
 export interface CreateServerDto {
   name: string;
   apiUrl: string;
+  webBasePath?: string;
   username: string;
   password: string;
+  inboundId?: number;
   publicHost: string;
   publicPort?: number;
   security?: string;
