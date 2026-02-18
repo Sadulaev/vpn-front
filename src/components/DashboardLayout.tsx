@@ -7,6 +7,7 @@ import {
   DatabaseOutlined,
   FileTextOutlined,
   LogoutOutlined,
+  MessageOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -20,9 +21,9 @@ const DashboardLayout = () => {
 
   const menuItems = [
     {
-      key: '/clients',
-      icon: <UserOutlined />,
-      label: 'Клиенты',
+      key: '/subscriptions',
+      icon: <FileTextOutlined />,
+      label: 'Подписки',
     },
     {
       key: '/pools',
@@ -35,9 +36,9 @@ const DashboardLayout = () => {
       label: 'Серверы',
     },
     {
-      key: '/subscriptions',
-      icon: <FileTextOutlined />,
-      label: 'Подписки',
+      key: '/messages',
+      icon: <MessageOutlined />,
+      label: 'Сообщения',
     },
   ];
 

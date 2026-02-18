@@ -10,12 +10,15 @@ const api = axios.create({
 });
 
 // Types
-export interface Client {
+export interface Subscription {
   id: string;
-  telegramId: string;
-  username: string | null;
-  firstName: string | null;
-  isActive: boolean;
+  clientId: string;
+  telegramId?: string | null;
+  status: string;
+  source: string;
+  months: number;
+  startDate: string;
+  endDate: string;
   createdAt: string;
 }
 
@@ -61,10 +64,10 @@ export interface Subscription {
 }
 
 export interface CreateSubscriptionDto {
-  telegramId: string;
-  username?: string;
-  firstName?: string;
+  clientId?: string;
+  telegramId?: string;
   months: number;
+  source?: 'admin' | 'bot';
 }
 
 export interface CreatePoolDto {
@@ -94,14 +97,19 @@ export interface CreateServerDto {
   status?: string;
 }
 
+export interface SendMessageDto {
+  message: string;
+  telegramId?: string;
+}
+
 // API methods
-export const clientsAPI = {
-  getAll: () => api.get<Client[]>('/clients'),
-  getById: (id: string) => api.get<Client>(`/clients/${id}`),
-  create: (data: { telegramId: string; username?: string; firstName?: string }) =>
-    api.post<Client>('/clients', data),
-  update: (id: string, data: Partial<Client>) => api.put<Client>(`/clients/${id}`, data),
-  delete: (id: string) => api.delete(`/clients/${id}`),
+export const subscriptionsAPI = {
+  getAll: () => api.get<Subscription[]>('/subscriptions'),
+  create: (data: CreateSubscriptionDto) => api.post('/subscriptions', data),
+  processExpired: () => api.post('/subscriptions/process-expired'),
+  getUrl: (id: string) => api.get<{ success: boolean; data: { subscriptionUrl: string } }>(`/subscriptions/${id}/url`),
+  delete: (id: string) => api.post(`/subscriptions/${id}/delete`),
+  sendMessage: (data: SendMessageDto) => api.post<{ success: boolean; data: { sent: number; failed: number; errors: string[] } }>('/subscriptions/send-message', data),
 };
 
 export const poolsAPI = {
@@ -120,15 +128,6 @@ export const serversAPI = {
   update: (id: number, data: Partial<CreateServerDto>) => 
     api.put<XuiServer>(`/server-pools/servers/${id}`, data),
   delete: (id: number) => api.delete(`/server-pools/servers/${id}`),
-};
-
-export const subscriptionsAPI = {
-  getAll: () => api.get<Subscription[]>('/subscriptions'),
-  getByTelegramId: (telegramId: string) => 
-    api.get<Subscription[]>(`/subscriptions/telegram/${telegramId}`),
-  create: (data: CreateSubscriptionDto) => api.post('/subscriptions', data),
-  processExpired: () => api.post('/subscriptions/process-expired'),
-  getUrl: (id: string) => api.get<{ success: boolean; data: { subscriptionUrl: string } }>(`/subscriptions/${id}/url`),
 };
 
 export default api;

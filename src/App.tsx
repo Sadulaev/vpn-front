@@ -3,10 +3,10 @@ import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import DashboardLayout from './components/DashboardLayout';
-import ClientsPage from './pages/ClientsPage';
 import ServersPage from './pages/ServersPage';
 import PoolsPage from './pages/PoolsPage';
 import SubscriptionsPage from './pages/SubscriptionsPage';
+import MessagesPage from './pages/MessagesPage';
 
 function App() {
   return (
@@ -23,11 +23,11 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<Navigate to="/clients" replace />} />
-            <Route path="clients" element={<ClientsPage />} />
+            <Route index element={<Navigate to="/subscriptions" replace />} />
+            <Route path="subscriptions" element={<SubscriptionsPage />} />
             <Route path="servers" element={<ServersPage />} />
             <Route path="pools" element={<PoolsPage />} />
-            <Route path="subscriptions" element={<SubscriptionsPage />} />
+            <Route path="messages" element={<MessagesPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

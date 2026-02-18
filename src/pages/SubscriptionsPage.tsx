@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, message, Space, Typography, Tag, Tooltip } from 'antd';
-import { PlusOutlined, CopyOutlined, CheckCircleOutlined, LinkOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Input, InputNumber, message, Space, Typography, Tag, Tooltip, Popconfirm } from 'antd';
+import { PlusOutlined, CopyOutlined, CheckCircleOutlined, LinkOutlined, DeleteOutlined } from '@ant-design/icons';
 import { subscriptionsAPI, Subscription } from '../services/api';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
@@ -77,6 +77,16 @@ const SubscriptionsPage = () => {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    try {
+      await subscriptionsAPI.delete(id);
+      message.success('Подписка удалена');
+      fetchSubscriptions();
+    } catch (error) {
+      message.error('Ошибка удаления подписки');
+    }
+  };
+
   const columns: ColumnsType<Subscription> = [
     {
       title: 'ID',
@@ -100,7 +110,7 @@ const SubscriptionsPage = () => {
       title: 'Client ID',
       dataIndex: 'clientId',
       key: 'clientId',
-      width: 100,
+      width: 150,
       render: (text: string) => (
         <Tooltip title="Скопировать Client ID">
           <Button 
@@ -165,19 +175,32 @@ const SubscriptionsPage = () => {
     {
       title: 'Действия',
       key: 'actions',
-      width: 120,
+      width: 150,
       render: (_, record) => (
-        <Tooltip title="Скопировать URL подписки">
-          <Button 
-            type="primary" 
-            ghost
-            size="small"
-            icon={<LinkOutlined />}
-            onClick={() => copySubscriptionUrl(record.id)}
+        <Space>
+          <Tooltip title="Скопировать URL подписки">
+            <Button 
+              type="primary" 
+              ghost
+              size="small"
+              icon={<LinkOutlined />}
+              onClick={() => copySubscriptionUrl(record.id)}
+            >
+              URL
+            </Button>
+          </Tooltip>
+          <Popconfirm
+            title="Удалить подписку?"
+            description="Клиент будет удален со всех серверов (если нет других активных подписок)"
+            onConfirm={() => handleDelete(record.id)}
+            okText="Да"
+            cancelText="Нет"
           >
-            URL
-          </Button>
-        </Tooltip>
+            <Button danger icon={<DeleteOutlined />} size="small">
+              Удалить
+            </Button>
+          </Popconfirm>
+        </Space>
       ),
     },
   ];
@@ -221,16 +244,9 @@ const SubscriptionsPage = () => {
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
             name="telegramId"
-            label="Telegram ID"
-            rules={[{ required: true, message: 'Введите Telegram ID' }]}
+            label="Telegram ID (опционально)"
           >
             <Input placeholder="123456789" />
-          </Form.Item>
-          <Form.Item name="username" label="Username (опционально)">
-            <Input placeholder="@username" />
-          </Form.Item>
-          <Form.Item name="firstName" label="Имя (опционально)">
-            <Input placeholder="Иван" />
           </Form.Item>
           <Form.Item
             name="months"
