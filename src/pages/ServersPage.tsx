@@ -64,7 +64,7 @@ const ServersPage = () => {
     setModalVisible(true);
   };
 
-  const handleVlessKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVlessKeyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const key = e.target.value;
     setVlessKey(key);
 

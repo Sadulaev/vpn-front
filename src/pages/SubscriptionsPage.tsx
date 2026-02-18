@@ -70,7 +70,7 @@ const SubscriptionsPage = () => {
   const copySubscriptionUrl = async (id: string) => {
     try {
       const response = await subscriptionsAPI.getUrl(id);
-      const url = response.data.data?.subscriptionUrl || response.data.subscriptionUrl;
+      const url = response.data.data.subscriptionUrl;
       copyToClipboard(url);
     } catch (error) {
       message.error('Ошибка получения URL подписки');

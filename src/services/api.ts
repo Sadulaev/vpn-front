@@ -128,7 +128,7 @@ export const subscriptionsAPI = {
     api.get<Subscription[]>(`/subscriptions/telegram/${telegramId}`),
   create: (data: CreateSubscriptionDto) => api.post('/subscriptions', data),
   processExpired: () => api.post('/subscriptions/process-expired'),
-  getUrl: (id: string) => api.get<{ subscriptionUrl: string }>(`/subscriptions/${id}/url`),
+  getUrl: (id: string) => api.get<{ success: boolean; data: { subscriptionUrl: string } }>(`/subscriptions/${id}/url`),
 };
 
 export default api;
