@@ -1,7 +1,6 @@
-# Multi-stage build для React + Vite приложения
+# Development mode для React + Vite приложения
 
-# Stage 1: Build
-FROM node:20-alpine AS builder
+FROM node:20-alpine
 
 WORKDIR /app
 
@@ -24,19 +23,11 @@ RUN echo "VITE_API_URL=${VITE_API_URL}" > .env && \
     echo "VITE_ADMIN_USERNAME=${VITE_ADMIN_USERNAME}" >> .env && \
     echo "VITE_ADMIN_PASSWORD=${VITE_ADMIN_PASSWORD}" >> .env
 
-# Сборка приложения
-RUN npm run build
-
-# Stage 2: Production
-FROM nginx:alpine
-
-# Копируем собранное приложение
-COPY --from=builder /app/dist /usr/share/nginx/html
-
 # Здоровье контейнера
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --quiet --tries=1 --spider http://localhost:80/ || exit 1
+    CMD wget --quiet --tries=1 --spider http://localhost:3001/ || exit 1
 
-EXPOSE 80
+EXPOSE 3001
 
-CMD ["nginx", "-g", "daemon off;"]
+# Запускаем Vite dev сервер с доступом извне
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
