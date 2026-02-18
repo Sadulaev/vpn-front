@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Popconfirm, Space, Typography, Tag } from 'antd';
+import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Popconfirm, Space, Typography, Tag, Alert } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { serversAPI, poolsAPI, XuiServer, ServerPool } from '../services/api';
+import { parseVlessKey } from '../utils/vlessParser';
 import type { ColumnsType } from 'antd/es/table';
 
 const { Title } = Typography;
@@ -12,6 +13,7 @@ const ServersPage = () => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingServer, setEditingServer] = useState<XuiServer | null>(null);
+  const [vlessKey, setVlessKey] = useState('');
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -42,6 +44,7 @@ const ServersPage = () => {
 
   const handleCreate = () => {
     setEditingServer(null);
+    setVlessKey('');
     form.resetFields();
     form.setFieldsValue({ 
       publicPort: 443, 
@@ -49,14 +52,31 @@ const ServersPage = () => {
       fp: 'chrome',
       spx: '/',
       usersLimit: 100,
+      status: 'active',
     });
     setModalVisible(true);
   };
 
   const handleEdit = (server: XuiServer) => {
     setEditingServer(server);
+    setVlessKey('');
     form.setFieldsValue(server);
     setModalVisible(true);
+  };
+
+  const handleVlessKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const key = e.target.value;
+    setVlessKey(key);
+
+    if (key.startsWith('vless://')) {
+      const parsed = parseVlessKey(key);
+      if (parsed) {
+        form.setFieldsValue(parsed);
+        message.success('Данные из VLESS ключа загружены');
+      } else {
+        message.error('Не удалось распарсить VLESS ключ');
+      }
+    }
   };
 
   const handleDelete = async (id: number) => {
@@ -182,6 +202,26 @@ const ServersPage = () => {
         width={700}
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
+          {!editingServer && (
+            <>
+              <Alert
+                message="Автозаполнение"
+                description="Вставьте VLESS ключ для автоматического заполнения полей"
+                type="info"
+                showIcon
+                style={{ marginBottom: 16 }}
+              />
+              <Form.Item label="VLESS ключ (опционально)">
+                <Input.TextArea
+                  placeholder="vless://uuid@host:port?params#name"
+                  value={vlessKey}
+                  onChange={handleVlessKeyChange}
+                  rows={3}
+                />
+              </Form.Item>
+            </>
+          )}
+
           <Form.Item
             name="name"
             label="Название"
@@ -190,15 +230,24 @@ const ServersPage = () => {
             <Input placeholder="Germany-1" />
           </Form.Item>
 
-          <Form.Item name="serverPoolId" label="Пул серверов">
-            <Select placeholder="Выберите пул" allowClear>
-              {pools.map(pool => (
-                <Select.Option key={pool.id} value={pool.id}>
-                  {pool.name}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
+          <Space style={{ width: '100%' }}>
+            <Form.Item name="serverPoolId" label="Пул серверов" style={{ width: 200 }}>
+              <Select placeholder="Выберите пул" allowClear>
+                {pools.map(pool => (
+                  <Select.Option key={pool.id} value={pool.id}>
+                    {pool.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            <Form.Item name="status" label="Статус" style={{ width: 150 }}>
+              <Select>
+                <Select.Option value="active">Активен</Select.Option>
+                <Select.Option value="failed">Неактивен</Select.Option>
+              </Select>
+            </Form.Item>
+          </Space>
 
           <Form.Item
             name="apiUrl"

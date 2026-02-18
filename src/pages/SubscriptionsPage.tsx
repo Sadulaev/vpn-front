@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form, Input, InputNumber, message, Space, Typography, Tag, Tooltip } from 'antd';
-import { PlusOutlined, CopyOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, CopyOutlined, CheckCircleOutlined, LinkOutlined } from '@ant-design/icons';
 import { subscriptionsAPI, Subscription } from '../services/api';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
@@ -65,6 +65,16 @@ const SubscriptionsPage = () => {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     message.success('Скопировано в буфер обмена');
+  };
+
+  const copySubscriptionUrl = async (id: string) => {
+    try {
+      const response = await subscriptionsAPI.getUrl(id);
+      const url = response.data.data?.subscriptionUrl || response.data.subscriptionUrl;
+      copyToClipboard(url);
+    } catch (error) {
+      message.error('Ошибка получения URL подписки');
+    }
   };
 
   const columns: ColumnsType<Subscription> = [
@@ -151,6 +161,24 @@ const SubscriptionsPage = () => {
       dataIndex: 'createdAt',
       key: 'createdAt',
       render: (date: string) => dayjs(date).format('DD.MM.YYYY HH:mm'),
+    },
+    {
+      title: 'Действия',
+      key: 'actions',
+      width: 120,
+      render: (_, record) => (
+        <Tooltip title="Скопировать URL подписки">
+          <Button 
+            type="primary" 
+            ghost
+            size="small"
+            icon={<LinkOutlined />}
+            onClick={() => copySubscriptionUrl(record.id)}
+          >
+            URL
+          </Button>
+        </Tooltip>
+      ),
     },
   ];
 
