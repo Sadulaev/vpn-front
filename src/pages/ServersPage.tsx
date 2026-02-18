@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Popconfirm, Space, Typography, Tag, Alert } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, SyncOutlined } from '@ant-design/icons';
 import { serversAPI, poolsAPI, XuiServer, ServerPool } from '../services/api';
 import { parseVlessKey } from '../utils/vlessParser';
 import type { ColumnsType } from 'antd/es/table';
@@ -14,6 +14,9 @@ const ServersPage = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingServer, setEditingServer] = useState<XuiServer | null>(null);
   const [vlessKey, setVlessKey] = useState('');
+  const [syncResult, setSyncResult] = useState<any>(null);
+  const [syncResultModalVisible, setSyncResultModalVisible] = useState(false);
+  const [syncing, setSyncing] = useState<number | null>(null);
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -95,13 +98,33 @@ const ServersPage = () => {
         await serversAPI.update(editingServer.id, values);
         message.success('Сервер обновлён');
       } else {
-        await serversAPI.create(values);
+        const response = await serversAPI.create(values);
         message.success('Сервер создан');
+        
+        // Показать результаты синхронизации
+        if (response.data.syncResult) {
+          setSyncResult(response.data.syncResult);
+          setSyncResultModalVisible(true);
+        }
       }
       setModalVisible(false);
       fetchServers();
     } catch (error) {
       message.error('Ошибка сохранения сервера');
+    }
+  };
+
+  const handleSync = async (serverId: number) => {
+    setSyncing(serverId);
+    try {
+      const response = await serversAPI.sync(serverId);
+      setSyncResult(response.data);
+      setSyncResultModalVisible(true);
+      message.success('Синхронизация завершена');
+    } catch (error) {
+      message.error('Ошибка синхронизации');
+    } finally {
+      setSyncing(null);
     }
   };
 
@@ -153,6 +176,15 @@ const ServersPage = () => {
       key: 'actions',
       render: (_, record) => (
         <Space>
+          <Button 
+            icon={<SyncOutlined />} 
+            size="small"
+            onClick={() => handleSync(record.id)}
+            loading={syncing === record.id}
+            title="Синхронизировать клиентов"
+          >
+            Синхр.
+          </Button>
           <Button 
             type="primary" 
             ghost 
@@ -368,6 +400,47 @@ const ServersPage = () => {
             <Input placeholder="xtls-rprx-vision" />
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        title="Результаты синхронизации"
+        open={syncResultModalVisible}
+        onCancel={() => setSyncResultModalVisible(false)}
+        footer={[
+          <Button key="close" type="primary" onClick={() => setSyncResultModalVisible(false)}>
+            Закрыть
+          </Button>
+        ]}
+      >
+        {syncResult && (
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Alert
+              message="Синхронизация завершена"
+              description={
+                <>
+                  <p>Всего подписок: {syncResult.total}</p>
+                  <p style={{ color: 'green' }}>Успешно добавлено: {syncResult.success}</p>
+                  <p style={{ color: 'red' }}>Ошибок: {syncResult.failed}</p>
+                </>
+              }
+              type={syncResult.failed > 0 ? 'warning' : 'success'}
+              showIcon
+            />
+
+            {syncResult.errors && syncResult.errors.length > 0 && (
+              <div>
+                <strong style={{ color: 'red' }}>Ошибки:</strong>
+                <ul style={{ marginTop: 8 }}>
+                  {syncResult.errors.map((error: string, idx: number) => (
+                    <li key={idx} style={{ color: 'red' }}>
+                      {error}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </Space>
+        )}
       </Modal>
     </div>
   );

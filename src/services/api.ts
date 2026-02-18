@@ -16,6 +16,7 @@ export interface Subscription {
   telegramId?: string | null;
   status: string;
   source: string;
+  note?: string | null;
   months: number;
   startDate: string;
   endDate: string;
@@ -57,6 +58,7 @@ export interface Subscription {
   id: string;
   clientId: string;
   status: string;
+  note?: string | null;
   months: number;
   startDate: string;
   endDate: string;
@@ -68,6 +70,7 @@ export interface CreateSubscriptionDto {
   telegramId?: string;
   months: number;
   source?: 'admin' | 'bot';
+  note?: string;
 }
 
 export interface CreatePoolDto {
@@ -104,7 +107,8 @@ export interface SendMessageDto {
 
 // API methods
 export const subscriptionsAPI = {
-  getAll: () => api.get<Subscription[]>('/subscriptions'),
+  getAll: (params?: { search?: string; source?: string }) => 
+    api.get<Subscription[]>('/subscriptions', { params }),
   create: (data: CreateSubscriptionDto) => api.post('/subscriptions', data),
   processExpired: () => api.post('/subscriptions/process-expired'),
   getUrl: (id: string) => api.get<{ success: boolean; data: { subscriptionUrl: string } }>(`/subscriptions/${id}/url`),
@@ -124,10 +128,11 @@ export const poolsAPI = {
 export const serversAPI = {
   getAll: () => api.get<XuiServer[]>('/server-pools/servers'),
   getById: (id: number) => api.get<XuiServer>(`/server-pools/servers/${id}`),
-  create: (data: CreateServerDto) => api.post<XuiServer>('/server-pools/servers', data),
+  create: (data: CreateServerDto) => api.post('/server-pools/servers', data),
   update: (id: number, data: Partial<CreateServerDto>) => 
     api.put<XuiServer>(`/server-pools/servers/${id}`, data),
   delete: (id: number) => api.delete(`/server-pools/servers/${id}`),
+  sync: (id: number) => api.post<{ total: number; success: number; failed: number; errors: string[] }>(`/server-pools/servers/${id}/sync`),
 };
 
 export default api;
