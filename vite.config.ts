@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 
 export default defineConfig({
+  base: '/admin/',
   plugins: [react()],
   resolve: {
     alias: {
@@ -11,6 +12,9 @@ export default defineConfig({
   },
   server: {
     port: 3001,
+    allowedHosts: [
+      'sub.hyper-vpn.ru'
+    ],
     proxy: {
       '/api': {
         target: 'http://localhost:3000',

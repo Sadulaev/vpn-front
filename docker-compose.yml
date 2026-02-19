@@ -11,7 +11,7 @@ services:
         VITE_ADMIN_PASSWORD: ${VITE_ADMIN_PASSWORD}
     container_name: hyper-vpn-frontend
     ports:
-      - "127.0.0.1:8080:3001"  # Vite dev server
+      - "3001:3001"  # Vite dev server
     restart: always
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/"]
