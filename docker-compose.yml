@@ -11,10 +11,10 @@ services:
         VITE_ADMIN_PASSWORD: ${VITE_ADMIN_PASSWORD}
     container_name: hyper-vpn-frontend
     ports:
-      - "3001:3001"  # Vite dev server
+      - "127.0.0.1:3001:3000"  # Production static server
     restart: always
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/"]
       interval: 30s
       timeout: 3s
       retries: 3
@@ -22,8 +22,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
-          cpus: '0.25'
+          memory: 128M
+          cpus: '0.15'
     logging:
       driver: "json-file"
       options:
