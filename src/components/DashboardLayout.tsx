@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Menu, Button } from 'antd';
 import {
-  UserOutlined,
   ClusterOutlined,
   DatabaseOutlined,
   FileTextOutlined,
