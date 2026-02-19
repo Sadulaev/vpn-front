@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, message, Popconfirm, Space, Typography, Switch, Tag } from 'antd';
+import { Button, Modal, Form, Input, Switch, message, Tag, Empty, Spin, Pagination } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { poolsAPI, ServerPool } from '../services/api';
-import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 
-const { Title } = Typography;
 const { TextArea } = Input;
 
 const PoolsPage = () => {
@@ -12,13 +10,8 @@ const PoolsPage = () => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingPool, setEditingPool] = useState<ServerPool | null>(null);
-  const [pagination, setPagination] = useState<TablePaginationConfig>({
-    current: 1,
-    pageSize: 20,
-    showSizeChanger: true,
-    showTotal: (total) => `Всего: ${total}`,
-    pageSizeOptions: ['10', '20', '50'],
-  });
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -30,8 +23,8 @@ const PoolsPage = () => {
     try {
       const response = await poolsAPI.getAll();
       setPools(response.data);
-    } catch (error) {
-      message.error('Ошибка загрузки пулов');
+    } catch {
+      message.error('Ошибка загрузки');
     } finally {
       setLoading(false);
     }
@@ -53,10 +46,10 @@ const PoolsPage = () => {
   const handleDelete = async (id: number) => {
     try {
       await poolsAPI.delete(id);
-      message.success('Пул удалён');
+      message.success('Удалено');
       fetchPools();
-    } catch (error) {
-      message.error('Ошибка удаления пула');
+    } catch {
+      message.error('Ошибка удаления');
     }
   };
 
@@ -64,138 +57,108 @@ const PoolsPage = () => {
     try {
       if (editingPool) {
         await poolsAPI.update(editingPool.id, values);
-        message.success('Пул обновлён');
+        message.success('Обновлено');
       } else {
         await poolsAPI.create(values);
-        message.success('Пул создан');
+        message.success('Создано');
       }
       setModalVisible(false);
       fetchPools();
-    } catch (error) {
-      message.error('Ошибка сохранения пула');
+    } catch {
+      message.error('Ошибка сохранения');
     }
   };
 
-  const columns: ColumnsType<ServerPool> = [
-    {
-      title: '№',
-      key: 'index',
-      width: 60,
-      fixed: 'left',
-      render: (_: any, __: any, index: number) => {
-        const current = pagination.current || 1;
-        const pageSize = pagination.pageSize || 20;
-        return (current - 1) * pageSize + index + 1;
-      },
-    },
-    {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-      width: 80,
-    },
-    {
-      title: 'Название',
-      dataIndex: 'name',
-      key: 'name',
-    },
-    {
-      title: 'Описание',
-      dataIndex: 'description',
-      key: 'description',
-      ellipsis: true,
-      responsive: ['lg'] as any,
-      render: (text) => text || '—',
-    },
-    {
-      title: 'Серверов',
-      dataIndex: 'servers',
-      key: 'servers',
-      width: 100,
-      render: (servers) => servers?.length || 0,
-    },
-    {
-      title: 'Активен',
-      dataIndex: 'isActive',
-      key: 'isActive',
-      render: (active: boolean) => (
-        <Tag color={active ? 'green' : 'red'}>
-          {active ? 'Да' : 'Нет'}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Действия',
-      key: 'actions',
-      width: 180,
-      fixed: 'right',
-      render: (_, record) => (
-        <Space size="small" wrap>
-          <Button 
-            type="primary" 
-            ghost 
-            icon={<EditOutlined />} 
-            size="small"
-            onClick={() => handleEdit(record)}
-          />
-          <Popconfirm
-            title="Удалить пул?"
-            description="Серверы будут отвязаны от пула"
-            onConfirm={() => handleDelete(record.id)}
-            okText="Да"
-            cancelText="Нет"
-          >
-            <Button danger icon={<DeleteOutlined />} size="small" />
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
+  const paginatedData = pools.slice((page - 1) * pageSize, page * pageSize);
 
   return (
-    <div style={{ padding: '0 16px' }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '12px',
-        marginBottom: 16 
-      }}>
-        <Title level={2} style={{ margin: 0 }}>Пулы серверов</Title>
+    <div>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <h2 style={{ margin: 0, fontSize: 20 }}>Пулы серверов</h2>
         <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-          Добавить пул
+          Добавить
         </Button>
       </div>
 
-      <Table
-        columns={columns}
-        dataSource={pools}
-        rowKey="id"
-        loading={loading}
-        pagination={pagination}
-        onChange={(newPagination) => setPagination(newPagination)}
-        scroll={{ x: 600 }}
-        size="small"
-        sticky
-      />
+      {/* Content */}
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: 40 }}><Spin size="large" /></div>
+      ) : pools.length === 0 ? (
+        <Empty description="Нет пулов" />
+      ) : (
+        <>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {paginatedData.map((pool, index) => (
+              <div key={pool.id} style={{ background: '#fff', borderRadius: 12, padding: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                  <div>
+                    <span style={{ color: '#999', fontSize: 12 }}>#{(page - 1) * pageSize + index + 1}</span>
+                    <div style={{ fontWeight: 600, fontSize: 16 }}>{pool.name}</div>
+                  </div>
+                  <Tag color={pool.isActive ? 'green' : 'red'}>
+                    {pool.isActive ? 'Активен' : 'Неактивен'}
+                  </Tag>
+                </div>
 
+                {pool.description && (
+                  <div style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>
+                    {pool.description}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ fontSize: 13, color: '#999' }}>
+                    Серверов: <strong style={{ color: '#333' }}>{pool.servers?.length || 0}</strong>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <Button icon={<EditOutlined />} onClick={() => handleEdit(pool)} />
+                    <Button danger icon={<DeleteOutlined />} onClick={() => {
+                      Modal.confirm({
+                        title: 'Удалить пул?',
+                        content: 'Серверы будут отвязаны от пула',
+                        okText: 'Удалить',
+                        cancelText: 'Отмена',
+                        onOk: () => handleDelete(pool.id),
+                      });
+                    }} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {pools.length > pageSize && (
+            <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>
+              <Pagination
+                current={page}
+                pageSize={pageSize}
+                total={pools.length}
+                onChange={(p, ps) => { setPage(p); setPageSize(ps); }}
+                showSizeChanger
+                pageSizeOptions={['10', '20', '50']}
+                size="small"
+              />
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Modal */}
       <Modal
         title={editingPool ? 'Редактировать пул' : 'Добавить пул'}
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         onOk={() => form.submit()}
+        okText="Сохранить"
+        cancelText="Отмена"
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          <Form.Item
-            name="name"
-            label="Название"
-            rules={[{ required: true, message: 'Введите название пула' }]}
-          >
+          <Form.Item name="name" label="Название" rules={[{ required: true }]}>
             <Input placeholder="Европа, Азия и т.д." />
           </Form.Item>
           <Form.Item name="description" label="Описание">
-            <TextArea rows={3} placeholder="Описание пула серверов" />
+            <TextArea rows={2} placeholder="Описание пула" />
           </Form.Item>
           <Form.Item name="isActive" label="Активен" valuePropName="checked">
             <Switch />

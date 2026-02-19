@@ -11,7 +11,7 @@ services:
         VITE_ADMIN_PASSWORD: ${VITE_ADMIN_PASSWORD}
     container_name: hyper-vpn-frontend
     ports:
-      - "127.0.0.1:3001:3001"  # Production static server
+      - "127.0.0.1:3001:3001"
     restart: always
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/"]
@@ -29,3 +29,12 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+# Nginx config for external server:
+# location /admin {
+#     rewrite ^/admin(.*)$ $1 break;
+#     proxy_pass http://127.0.0.1:3001;
+# }
+# location /assets {
+#     proxy_pass http://127.0.0.1:3001;
+# }

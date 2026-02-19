@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { Form, Input, Button, Card, Typography, message } from 'antd';
+import { Form, Input, Button, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
-
-const { Title } = Typography;
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -17,49 +15,62 @@ const LoginPage = () => {
 
   const onFinish = (values: { username: string; password: string }) => {
     setLoading(true);
-    
     setTimeout(() => {
       const success = login(values.username, values.password);
-      
       if (success) {
-        message.success('Вход выполнен успешно');
+        message.success('Вход выполнен');
         navigate('/');
       } else {
         message.error('Неверный логин или пароль');
       }
-      
       setLoading(false);
-    }, 500);
+    }, 300);
   };
 
   return (
     <div style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
       minHeight: '100vh',
-      padding: '20px',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      padding: '24px',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     }}>
-      <Card style={{ width: '100%', maxWidth: 400, boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}>
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <Title level={2}>Hyper VPN</Title>
-          <Typography.Text type="secondary">Панель управления</Typography.Text>
+      <div style={{
+        background: '#fff',
+        borderRadius: 16,
+        padding: '32px 24px',
+        maxWidth: 400,
+        width: '100%',
+        margin: '0 auto',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div style={{
+            width: 64,
+            height: 64,
+            borderRadius: 16,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 16px',
+          }}>
+            <span style={{ fontSize: 28, color: '#fff', fontWeight: 700 }}>H</span>
+          </div>
+          <h1 style={{ fontSize: 24, marginBottom: 4 }}>Hyper VPN</h1>
+          <p style={{ color: '#999', margin: 0 }}>Панель управления</p>
         </div>
-        
-        <Form
-          name="login"
-          onFinish={onFinish}
-          autoComplete="off"
-          size="large"
-        >
+
+        <Form name="login" onFinish={onFinish} size="large">
           <Form.Item
             name="username"
-            rules={[{ required: true, message: 'Введите имя пользователя' }]}
+            rules={[{ required: true, message: 'Введите логин' }]}
           >
             <Input 
-              prefix={<UserOutlined />} 
-              placeholder="Имя пользователя" 
+              prefix={<UserOutlined style={{ color: '#bbb' }} />} 
+              placeholder="Логин"
+              style={{ height: 48, borderRadius: 8 }}
             />
           </Form.Item>
 
@@ -68,18 +79,31 @@ const LoginPage = () => {
             rules={[{ required: true, message: 'Введите пароль' }]}
           >
             <Input.Password
-              prefix={<LockOutlined />}
+              prefix={<LockOutlined style={{ color: '#bbb' }} />}
               placeholder="Пароль"
+              style={{ height: 48, borderRadius: 8 }}
             />
           </Form.Item>
 
-          <Form.Item>
-            <Button type="primary" htmlType="submit" block loading={loading}>
+          <Form.Item style={{ marginBottom: 0 }}>
+            <Button 
+              type="primary" 
+              htmlType="submit" 
+              block 
+              loading={loading}
+              style={{ 
+                height: 48, 
+                borderRadius: 8, 
+                fontWeight: 600,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                border: 'none',
+              }}
+            >
               Войти
             </Button>
           </Form.Item>
         </Form>
-      </Card>
+      </div>
     </div>
   );
 };

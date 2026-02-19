@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { Card, Form, Input, Button, message, Typography, Space, Statistic, Row, Col } from 'antd';
-import { SendOutlined, UserOutlined, UsergroupAddOutlined } from '@ant-design/icons';
+import { Form, Input, Button, message } from 'antd';
+import { SendOutlined, UserOutlined } from '@ant-design/icons';
 import { subscriptionsAPI } from '../services/api';
 
 const { TextArea } = Input;
-const { Title, Text } = Typography;
 
 interface SendResult {
   sent: number;
@@ -28,58 +27,46 @@ export default function MessagesPage() {
       });
 
       if (response.data.success) {
-        // Если это массовая рассылка - приходит message
         if (response.data.message) {
-          message.success(
-            'Массовая рассылка запущена! Проверьте логи сервера для просмотра результатов.',
-            10
-          );
+          message.success('Рассылка запущена! Результаты в логах сервера.', 10);
           form.resetFields(['message', 'telegramId']);
         } else {
-          // Одиночное сообщение - приходит data
           const result = response.data.data;
-          
           if (result) {
             setLastResult(result);
-
             if (result.failed === 0) {
-              message.success(`Сообщение успешно отправлено!`);
+              message.success('Отправлено!');
               form.resetFields(['message', 'telegramId']);
             } else {
-              message.error('Не удалось отправить сообщение');
+              message.error('Ошибка отправки');
             }
           }
         }
       }
     } catch (error: any) {
-      console.error('Failed to send message:', error);
-      message.error(error.response?.data?.message || 'Не удалось отправить сообщение');
+      message.error(error.response?.data?.message || 'Ошибка отправки');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ padding: '16px 16px 24px' }}>
-      <Title level={2}>Отправка сообщений</Title>
-      <Text type="secondary">
-        Отправляйте сообщения через Telegram бота одному пользователю или всем из Google Sheets (в фоновом режиме)
-      </Text>
+    <div>
+      <h2 style={{ margin: '0 0 8px', fontSize: 20 }}>Рассылка</h2>
+      <p style={{ color: '#999', margin: '0 0 20px', fontSize: 13 }}>
+        Отправка сообщений через Telegram бота
+      </p>
 
-      <Card style={{ marginTop: '24px', maxWidth: '800px' }}>
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSend}
-        >
+      <div style={{ background: '#fff', borderRadius: 12, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
+        <Form form={form} layout="vertical" onFinish={handleSend}>
           <Form.Item
             label="Сообщение"
             name="message"
             rules={[{ required: true, message: 'Введите сообщение' }]}
           >
             <TextArea
-              rows={6}
-              placeholder="Введите текст сообщения (поддерживается HTML-форматирование)"
+              rows={5}
+              placeholder="Текст сообщения (поддерживается HTML)"
               showCount
               maxLength={4096}
             />
@@ -88,68 +75,54 @@ export default function MessagesPage() {
           <Form.Item
             label="Telegram ID"
             name="telegramId"
-            extra="Оставьте пустым для массовой рассылки всем из Google Sheets (колонка A). Результаты будут в логах сервера."
+            extra="Пусто = рассылка всем из Google Sheets"
           >
             <Input
-              placeholder="Опционально: ID конкретного пользователя"
-              prefix={<UserOutlined />}
+              placeholder="ID пользователя (опционально)"
+              prefix={<UserOutlined style={{ color: '#bbb' }} />}
             />
           </Form.Item>
 
-          <Form.Item>
-            <Space>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={loading}
-                icon={<SendOutlined />}
-              >
-                Отправить
-              </Button>
-              <Button
-                onClick={() => form.resetFields()}
-                disabled={loading}
-              >
-                Очистить
-              </Button>
-            </Space>
-          </Form.Item>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={loading}
+              icon={<SendOutlined />}
+              style={{ flex: 1 }}
+            >
+              Отправить
+            </Button>
+            <Button onClick={() => form.resetFields()} disabled={loading}>
+              Очистить
+            </Button>
+          </div>
         </Form>
-      </Card>
+      </div>
 
       {lastResult && (
-        <Card style={{ marginTop: '24px', maxWidth: '800px' }} title="Результат отправки">
-          <Row gutter={16}>
-            <Col span={12}>
-              <Statistic
-                title="Отправлено"
-                value={lastResult.sent}
-                valueStyle={{ color: '#3f8600' }}
-                prefix={<UsergroupAddOutlined />}
-              />
-            </Col>
-            <Col span={12}>
-              <Statistic
-                title="Ошибок"
-                value={lastResult.failed}
-                valueStyle={{ color: lastResult.failed > 0 ? '#cf1322' : '#3f8600' }}
-              />
-            </Col>
-          </Row>
+        <div style={{ marginTop: 16, background: '#fff', borderRadius: 12, padding: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
+          <h3 style={{ margin: '0 0 12px', fontSize: 16 }}>Результат</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div style={{ background: '#f6ffed', borderRadius: 8, padding: 12, textAlign: 'center' }}>
+              <div style={{ fontSize: 24, fontWeight: 600, color: '#52c41a' }}>{lastResult.sent}</div>
+              <div style={{ fontSize: 12, color: '#999' }}>Отправлено</div>
+            </div>
+            <div style={{ background: lastResult.failed > 0 ? '#fff2f0' : '#f6ffed', borderRadius: 8, padding: 12, textAlign: 'center' }}>
+              <div style={{ fontSize: 24, fontWeight: 600, color: lastResult.failed > 0 ? '#ff4d4f' : '#52c41a' }}>{lastResult.failed}</div>
+              <div style={{ fontSize: 12, color: '#999' }}>Ошибок</div>
+            </div>
+          </div>
 
           {lastResult.errors.length > 0 && (
-            <div style={{ marginTop: '16px' }}>
-              <Title level={5}>Ошибки:</Title>
-              <ul>
-                {lastResult.errors.map((error, index) => (
-                  <li key={index}>
-                    <Text type="danger">{error}</Text>
-                  </li>
-                ))}
-              </ul>
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Ошибки:</div>
+              {lastResult.errors.map((error, i) => (
+                <div key={i} style={{ fontSize: 12, color: '#ff4d4f', marginBottom: 4 }}>• {error}</div>
+              ))}
             </div>
           )}
-        </Card>
+        </div>
       )}
     </div>
   );

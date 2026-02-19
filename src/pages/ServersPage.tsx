@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Popconfirm, Space, Typography, Tag, Alert } from 'antd';
+import { Button, Modal, Form, Input, InputNumber, Select, message, Tag, Empty, Spin, Pagination } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SyncOutlined } from '@ant-design/icons';
 import { serversAPI, poolsAPI, XuiServer, ServerPool } from '../services/api';
 import { parseVlessKey } from '../utils/vlessParser';
-import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 
-const { Title } = Typography;
+const { TextArea } = Input;
 
 const ServersPage = () => {
   const [servers, setServers] = useState<XuiServer[]>([]);
@@ -14,16 +13,11 @@ const ServersPage = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingServer, setEditingServer] = useState<XuiServer | null>(null);
   const [vlessKey, setVlessKey] = useState('');
-  const [syncResult, setSyncResult] = useState<any>(null);
-  const [syncResultModalVisible, setSyncResultModalVisible] = useState(false);
   const [syncing, setSyncing] = useState<number | null>(null);
-  const [pagination, setPagination] = useState<TablePaginationConfig>({
-    current: 1,
-    pageSize: 10,
-    showSizeChanger: true,
-    showTotal: (total) => `Всего: ${total}`,
-    pageSizeOptions: ['10', '20', '50'],
-  });
+  const [syncResultModal, setSyncResultModal] = useState(false);
+  const [syncResult, setSyncResult] = useState<any>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -36,8 +30,8 @@ const ServersPage = () => {
     try {
       const response = await serversAPI.getAll();
       setServers(response.data);
-    } catch (error) {
-      message.error('Ошибка загрузки серверов');
+    } catch {
+      message.error('Ошибка загрузки');
     } finally {
       setLoading(false);
     }
@@ -47,8 +41,8 @@ const ServersPage = () => {
     try {
       const response = await poolsAPI.getAll();
       setPools(response.data);
-    } catch (error) {
-      message.error('Ошибка загрузки пулов');
+    } catch {
+      // Silent fail
     }
   };
 
@@ -56,14 +50,7 @@ const ServersPage = () => {
     setEditingServer(null);
     setVlessKey('');
     form.resetFields();
-    form.setFieldsValue({ 
-      publicPort: 443, 
-      security: 'reality',
-      fp: 'chrome',
-      spx: '/',
-      usersLimit: 100,
-      status: 'active',
-    });
+    form.setFieldsValue({ publicPort: 443, security: 'reality', fp: 'chrome', spx: '/', usersLimit: 100, status: 'active' });
     setModalVisible(true);
   };
 
@@ -77,14 +64,11 @@ const ServersPage = () => {
   const handleVlessKeyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const key = e.target.value;
     setVlessKey(key);
-
     if (key.startsWith('vless://')) {
       const parsed = parseVlessKey(key);
       if (parsed) {
         form.setFieldsValue(parsed);
-        message.success('Данные из VLESS ключа загружены');
-      } else {
-        message.error('Не удалось распарсить VLESS ключ');
+        message.success('Данные загружены');
       }
     }
   };
@@ -92,10 +76,10 @@ const ServersPage = () => {
   const handleDelete = async (id: number) => {
     try {
       await serversAPI.delete(id);
-      message.success('Сервер удалён');
+      message.success('Удалено');
       fetchServers();
-    } catch (error) {
-      message.error('Ошибка удаления сервера');
+    } catch {
+      message.error('Ошибка удаления');
     }
   };
 
@@ -103,21 +87,19 @@ const ServersPage = () => {
     try {
       if (editingServer) {
         await serversAPI.update(editingServer.id, values);
-        message.success('Сервер обновлён');
+        message.success('Обновлено');
       } else {
         const response = await serversAPI.create(values);
-        message.success('Сервер создан');
-        
-        // Показать результаты синхронизации
+        message.success('Создано');
         if (response.data.syncResult) {
           setSyncResult(response.data.syncResult);
-          setSyncResultModalVisible(true);
+          setSyncResultModal(true);
         }
       }
       setModalVisible(false);
       fetchServers();
-    } catch (error) {
-      message.error('Ошибка сохранения сервера');
+    } catch {
+      message.error('Ошибка сохранения');
     }
   };
 
@@ -126,359 +108,226 @@ const ServersPage = () => {
     try {
       const response = await serversAPI.sync(serverId);
       setSyncResult(response.data);
-      setSyncResultModalVisible(true);
-      message.success('Синхронизация завершена');
-    } catch (error) {
+      setSyncResultModal(true);
+    } catch {
       message.error('Ошибка синхронизации');
     } finally {
       setSyncing(null);
     }
   };
 
-  const columns: ColumnsType<XuiServer> = [
-    {
-      title: '№',
-      key: 'index',
-      width: 50,
-      fixed: 'left',
-      render: (_: any, __: any, index: number) => {
-        const current = pagination.current || 1;
-        const pageSize = pagination.pageSize || 10;
-        return (current - 1) * pageSize + index + 1;
-      },
-    },
-    {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-      width: 60,
-      responsive: ['lg'] as any,
-    },
-    {
-      title: 'Название',
-      dataIndex: 'name',
-      key: 'name',
-      width: 150,
-      ellipsis: true,
-    },
-    {
-      title: 'Пул',
-      dataIndex: 'serverPool',
-      key: 'serverPool',
-      width: 120,
-      responsive: ['md'] as any,
-      ellipsis: true,
-      render: (pool) => pool?.name || '—',
-    },
-    {
-      title: 'Хост',
-      dataIndex: 'publicHost',
-      key: 'publicHost',
-      width: 150,
-      responsive: ['xl'] as any,
-      ellipsis: true,
-    },
-    {
-      title: 'Порт',
-      dataIndex: 'publicPort',
-      key: 'publicPort',
-      width: 70,
-      responsive: ['lg'] as any,
-    },
-    {
-      title: 'Лимит',
-      dataIndex: 'usersLimit',
-      key: 'usersLimit',
-      width: 70,
-      responsive: ['xl'] as any,
-    },
-    {
-      title: 'Статус',
-      dataIndex: 'status',
-      key: 'status',
-      width: 100,
-      render: (status: string) => (
-        <Tag color={status === 'active' ? 'green' : status === 'failed' ? 'red' : 'gray'}>
-          {status === 'active' ? 'Актив' : status === 'failed' ? 'Неакт' : status}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Действия',
-      key: 'actions',
-      width: 150,
-      fixed: 'right',
-      render: (_, record) => (
-        <Space size="small" wrap>
-          <Button 
-            icon={<SyncOutlined />} 
-            size="small"
-            onClick={() => handleSync(record.id)}
-            loading={syncing === record.id}
-            title="Синхронизировать"
-          />
-          <Button 
-            type="primary" 
-            ghost 
-            icon={<EditOutlined />} 
-            size="small"
-            onClick={() => handleEdit(record)}
-          />
-          <Popconfirm
-            title="Удалить сервер?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="Да"
-            cancelText="Нет"
-          >
-            <Button danger icon={<DeleteOutlined />} size="small" />
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
+  const paginatedData = servers.slice((page - 1) * pageSize, page * pageSize);
 
   return (
-    <div style={{ padding: '0 16px' }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '12px',
-        marginBottom: 16 
-      }}>
-        <Title level={2} style={{ margin: 0 }}>Серверы</Title>
+    <div>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <h2 style={{ margin: 0, fontSize: 20 }}>Серверы</h2>
         <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-          Добавить сервер
+          Добавить
         </Button>
       </div>
 
-      <Table
-        columns={columns}
-        dataSource={servers}
-        rowKey="id"
-        loading={loading}
-        pagination={pagination}
-        onChange={(newPagination) => setPagination(newPagination)}
-        scroll={{ x: 800 }}
-        size="small"
-        sticky
-      />
+      {/* Content */}
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: 40 }}><Spin size="large" /></div>
+      ) : servers.length === 0 ? (
+        <Empty description="Нет серверов" />
+      ) : (
+        <>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {paginatedData.map((server, index) => (
+              <div key={server.id} style={{ background: '#fff', borderRadius: 12, padding: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                  <div>
+                    <span style={{ color: '#999', fontSize: 12 }}>#{(page - 1) * pageSize + index + 1}</span>
+                    <div style={{ fontWeight: 600, fontSize: 16 }}>{server.name}</div>
+                    {server.serverPool && (
+                      <Tag color="blue" style={{ marginTop: 4 }}>{server.serverPool.name}</Tag>
+                    )}
+                  </div>
+                  <Tag color={server.status === 'active' ? 'green' : 'red'}>
+                    {server.status === 'active' ? 'Актив' : 'Неакт'}
+                  </Tag>
+                </div>
 
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 13, color: '#666', marginBottom: 12 }}>
+                  <div><span style={{ color: '#999' }}>Хост:</span> {server.publicHost}</div>
+                  <div><span style={{ color: '#999' }}>Порт:</span> {server.publicPort}</div>
+                  <div><span style={{ color: '#999' }}>Лимит:</span> {server.usersLimit}</div>
+                  <div><span style={{ color: '#999' }}>Security:</span> {server.security}</div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <Button icon={<SyncOutlined />} loading={syncing === server.id} onClick={() => handleSync(server.id)} style={{ flex: 1 }}>
+                    Синхр.
+                  </Button>
+                  <Button icon={<EditOutlined />} onClick={() => handleEdit(server)} />
+                  <Button danger icon={<DeleteOutlined />} onClick={() => {
+                    Modal.confirm({
+                      title: 'Удалить сервер?',
+                      okText: 'Удалить',
+                      cancelText: 'Отмена',
+                      onOk: () => handleDelete(server.id),
+                    });
+                  }} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>
+            <Pagination
+              current={page}
+              pageSize={pageSize}
+              total={servers.length}
+              onChange={(p, ps) => { setPage(p); setPageSize(ps); }}
+              showSizeChanger
+              pageSizeOptions={['10', '20', '50']}
+              size="small"
+            />
+          </div>
+        </>
+      )}
+
+      {/* Create/Edit Modal */}
       <Modal
-        title={editingServer ? 'Редактировать сервер' : 'Добавить сервер'}
+        title={editingServer ? 'Редактировать' : 'Добавить сервер'}
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         onOk={() => form.submit()}
-        width={700}
+        width="95%"
+        style={{ maxWidth: 600 }}
+        okText="Сохранить"
+        cancelText="Отмена"
       >
-        <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          {!editingServer && (
-            <>
-              <Alert
-                message="Автозаполнение"
-                description="Вставьте VLESS ключ для автоматического заполнения полей"
-                type="info"
-                showIcon
-                style={{ marginBottom: 16 }}
-              />
-              <Form.Item label="VLESS ключ (опционально)">
-                <Input.TextArea
+        <div style={{ maxHeight: '70vh', overflowY: 'auto', paddingRight: 8 }}>
+          <Form form={form} layout="vertical" onFinish={handleSubmit} size="small">
+            {!editingServer && (
+              <Form.Item label="VLESS ключ (автозаполнение)">
+                <TextArea
                   placeholder="vless://uuid@host:port?params#name"
                   value={vlessKey}
                   onChange={handleVlessKeyChange}
-                  rows={3}
+                  rows={2}
                 />
               </Form.Item>
-            </>
-          )}
+            )}
 
-          <Form.Item
-            name="name"
-            label="Название"
-            rules={[{ required: true, message: 'Введите название' }]}
-          >
-            <Input placeholder="Germany-1" />
-          </Form.Item>
-
-          <Space style={{ width: '100%' }}>
-            <Form.Item name="serverPoolId" label="Пул серверов" style={{ width: 200 }}>
-              <Select placeholder="Выберите пул" allowClear>
-                {pools.map(pool => (
-                  <Select.Option key={pool.id} value={pool.id}>
-                    {pool.name}
-                  </Select.Option>
-                ))}
-              </Select>
+            <Form.Item name="name" label="Название" rules={[{ required: true }]}>
+              <Input placeholder="Germany-1" />
             </Form.Item>
 
-            <Form.Item name="status" label="Статус" style={{ width: 150 }}>
-              <Select>
-                <Select.Option value="active">Активен</Select.Option>
-                <Select.Option value="failed">Неактивен</Select.Option>
-              </Select>
-            </Form.Item>
-          </Space>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <Form.Item name="serverPoolId" label="Пул">
+                <Select placeholder="Пул" allowClear>
+                  {pools.map(p => <Select.Option key={p.id} value={p.id}>{p.name}</Select.Option>)}
+                </Select>
+              </Form.Item>
+              <Form.Item name="status" label="Статус">
+                <Select>
+                  <Select.Option value="active">Активен</Select.Option>
+                  <Select.Option value="failed">Неактивен</Select.Option>
+                </Select>
+              </Form.Item>
+            </div>
 
-          <Form.Item
-            name="apiUrl"
-            label="API URL"
-            rules={[{ required: true, message: 'Введите API URL' }]}
-          >
-            <Input placeholder="https://panel.example.com" />
-          </Form.Item>
-
-          <Space style={{ width: '100%' }}>
-            <Form.Item
-              name="webBasePath"
-              label="Web Base Path"
-              style={{ width: 200 }}
-            >
-              <Input placeholder="dashboard" />
+            <Form.Item name="apiUrl" label="API URL" rules={[{ required: true }]}>
+              <Input placeholder="https://panel.example.com" />
             </Form.Item>
 
-            <Form.Item
-              name="inboundId"
-              label="Inbound ID"
-              style={{ width: 150 }}
-            >
-              <InputNumber min={1} style={{ width: '100%' }} placeholder="1" />
-            </Form.Item>
-          </Space>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <Form.Item name="webBasePath" label="Web Path">
+                <Input placeholder="dashboard" />
+              </Form.Item>
+              <Form.Item name="inboundId" label="Inbound ID">
+                <InputNumber min={1} style={{ width: '100%' }} />
+              </Form.Item>
+            </div>
 
-          <Space style={{ width: '100%' }}>
-            <Form.Item
-              name="username"
-              label="Username"
-              rules={[{ required: true }]}
-              style={{ width: 200 }}
-            >
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <Form.Item name="username" label="Username" rules={[{ required: true }]}>
+                <Input />
+              </Form.Item>
+              <Form.Item name="password" label="Password" rules={[{ required: true }]}>
+                <Input.Password />
+              </Form.Item>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
+              <Form.Item name="publicHost" label="Публичный хост" rules={[{ required: true }]}>
+                <Input placeholder="vpn.example.com" />
+              </Form.Item>
+              <Form.Item name="publicPort" label="Порт">
+                <InputNumber min={1} max={65535} style={{ width: '100%' }} />
+              </Form.Item>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <Form.Item name="security" label="Security">
+                <Select>
+                  <Select.Option value="reality">reality</Select.Option>
+                  <Select.Option value="tls">tls</Select.Option>
+                  <Select.Option value="none">none</Select.Option>
+                </Select>
+              </Form.Item>
+              <Form.Item name="usersLimit" label="Лимит">
+                <InputNumber min={1} style={{ width: '100%' }} />
+              </Form.Item>
+            </div>
+
+            <Form.Item name="pbk" label="Public Key (PBK)" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
 
-            <Form.Item
-              name="password"
-              label="Password"
-              rules={[{ required: true }]}
-              style={{ width: 200 }}
-            >
-              <Input.Password />
-            </Form.Item>
-          </Space>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
+              <Form.Item name="sni" label="SNI" rules={[{ required: true }]}>
+                <Input />
+              </Form.Item>
+              <Form.Item name="sid" label="Short ID" rules={[{ required: true }]}>
+                <Input />
+              </Form.Item>
+            </div>
 
-          <Space style={{ width: '100%' }}>
-            <Form.Item
-              name="publicHost"
-              label="Публичный хост"
-              rules={[{ required: true }]}
-              style={{ width: 300 }}
-            >
-              <Input placeholder="vpn.example.com" />
-            </Form.Item>
-
-            <Form.Item name="publicPort" label="Порт" style={{ width: 120 }}>
-              <InputNumber min={1} max={65535} style={{ width: '100%' }} />
-            </Form.Item>
-
-            <Form.Item name="security" label="Security" style={{ width: 150 }}>
-              <Select>
-                <Select.Option value="reality">reality</Select.Option>
-                <Select.Option value="tls">tls</Select.Option>
-                <Select.Option value="none">none</Select.Option>
-              </Select>
-            </Form.Item>
-          </Space>
-
-          <Form.Item
-            name="pbk"
-            label="Public Key (PBK)"
-            rules={[{ required: true }]}
-          >
-            <Input placeholder="SX7Jyungg..." />
-          </Form.Item>
-
-          <Space style={{ width: '100%' }}>
-            <Form.Item
-              name="sni"
-              label="SNI"
-              rules={[{ required: true }]}
-              style={{ width: 300 }}
-            >
-              <Input placeholder="sni.example.com" />
-            </Form.Item>
-
-            <Form.Item
-              name="sid"
-              label="Short ID"
-              rules={[{ required: true }]}
-              style={{ width: 150 }}
-            >
-              <Input placeholder="6ba85179e30d4fc2" />
-            </Form.Item>
-          </Space>
-
-          <Space style={{ width: '100%' }}>
-            <Form.Item name="fp" label="Fingerprint" style={{ width: 150 }}>
-              <Select>
-                <Select.Option value="chrome">chrome</Select.Option>
-                <Select.Option value="firefox">firefox</Select.Option>
-                <Select.Option value="safari">safari</Select.Option>
-              </Select>
-            </Form.Item>
-
-            <Form.Item name="spx" label="Spider X" style={{ width: 100 }}>
-              <Input placeholder="/" />
-            </Form.Item>
-
-            <Form.Item name="usersLimit" label="Лимит пользователей" style={{ width: 150 }}>
-              <InputNumber min={1} style={{ width: '100%' }} />
-            </Form.Item>
-          </Space>
-
-          <Form.Item name="flow" label="Flow (опционально)">
-            <Input placeholder="xtls-rprx-vision" />
-          </Form.Item>
-        </Form>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+              <Form.Item name="fp" label="Fingerprint">
+                <Select>
+                  <Select.Option value="chrome">chrome</Select.Option>
+                  <Select.Option value="firefox">firefox</Select.Option>
+                  <Select.Option value="safari">safari</Select.Option>
+                </Select>
+              </Form.Item>
+              <Form.Item name="spx" label="Spider X">
+                <Input placeholder="/" />
+              </Form.Item>
+              <Form.Item name="flow" label="Flow">
+                <Input />
+              </Form.Item>
+            </div>
+          </Form>
+        </div>
       </Modal>
 
+      {/* Sync Result Modal */}
       <Modal
-        title="Результаты синхронизации"
-        open={syncResultModalVisible}
-        onCancel={() => setSyncResultModalVisible(false)}
-        footer={[
-          <Button key="close" type="primary" onClick={() => setSyncResultModalVisible(false)}>
-            Закрыть
-          </Button>
-        ]}
+        title="Результат синхронизации"
+        open={syncResultModal}
+        onCancel={() => setSyncResultModal(false)}
+        footer={<Button type="primary" onClick={() => setSyncResultModal(false)}>OK</Button>}
       >
         {syncResult && (
-          <Space direction="vertical" style={{ width: '100%' }}>
-            <Alert
-              message="Синхронизация завершена"
-              description={
-                <>
-                  <p>Всего подписок: {syncResult.total}</p>
-                  <p style={{ color: 'green' }}>Успешно добавлено: {syncResult.success}</p>
-                  <p style={{ color: 'red' }}>Ошибок: {syncResult.failed}</p>
-                </>
-              }
-              type={syncResult.failed > 0 ? 'warning' : 'success'}
-              showIcon
-            />
-
-            {syncResult.errors && syncResult.errors.length > 0 && (
-              <div>
-                <strong style={{ color: 'red' }}>Ошибки:</strong>
-                <ul style={{ marginTop: 8 }}>
-                  {syncResult.errors.map((error: string, idx: number) => (
-                    <li key={idx} style={{ color: 'red' }}>
-                      {error}
-                    </li>
-                  ))}
-                </ul>
+          <div>
+            <div style={{ background: syncResult.failed > 0 ? '#fff7e6' : '#f6ffed', border: `1px solid ${syncResult.failed > 0 ? '#ffd591' : '#b7eb8f'}`, borderRadius: 8, padding: 12 }}>
+              <div>Всего: {syncResult.total}</div>
+              <div style={{ color: '#52c41a' }}>Успешно: {syncResult.success}</div>
+              {syncResult.failed > 0 && <div style={{ color: '#ff4d4f' }}>Ошибок: {syncResult.failed}</div>}
+            </div>
+            {syncResult.errors?.length > 0 && (
+              <div style={{ marginTop: 12, fontSize: 12, color: '#ff4d4f' }}>
+                {syncResult.errors.map((e: string, i: number) => <div key={i}>• {e}</div>)}
               </div>
             )}
-          </Space>
+          </div>
         )}
       </Modal>
     </div>
