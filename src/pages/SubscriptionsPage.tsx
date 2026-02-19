@@ -41,7 +41,7 @@ const SubscriptionsPage = () => {
 
   const handleCreate = () => {
     form.resetFields();
-    form.setFieldsValue({ months: 1 });
+    form.setFieldsValue({ days: 30 });
     setModalVisible(true);
   };
 
@@ -170,9 +170,9 @@ const SubscriptionsPage = () => {
     },
     {
       title: 'Период',
-      dataIndex: 'months',
-      key: 'months',
-      render: (months: number) => `${months} мес.`,
+      dataIndex: 'days',
+      key: 'days',
+      render: (days: number) => `${days} дн.`,
     },
     {
       title: 'Начало',
@@ -234,10 +234,17 @@ const SubscriptionsPage = () => {
   ];
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-        <Title level={2}>Подписки</Title>
-        <Space>
+    <div style={{ padding: '0 16px' }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '12px',
+        marginBottom: 16 
+      }}>
+        <Title level={2} style={{ margin: 0 }}>Подписки</Title>
+        <Space wrap>
           <Button 
             icon={<CheckCircleOutlined />}
             onClick={handleProcessExpired}
@@ -255,13 +262,13 @@ const SubscriptionsPage = () => {
         </Space>
       </div>
 
-      <Space style={{ marginBottom: 16 }}>
+      <Space wrap style={{ marginBottom: 16 }}>
         <Input
           placeholder="Поиск по Client ID или примечанию"
           prefix={<SearchOutlined />}
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
-          style={{ width: 300 }}
+          style={{ width: '100%', maxWidth: 300, minWidth: 200 }}
           allowClear
         />
         <Select
@@ -282,6 +289,7 @@ const SubscriptionsPage = () => {
         rowKey="id"
         loading={loading}
         pagination={{ pageSize: 20 }}
+        scroll={{ x: 1200 }}
       />
 
       <Modal
@@ -298,11 +306,11 @@ const SubscriptionsPage = () => {
             <Input placeholder="123456789" />
           </Form.Item>
           <Form.Item
-            name="months"
-            label="Период (месяцев)"
+            name="days"
+            label="Период (дней)"
             rules={[{ required: true, message: 'Укажите период' }]}
           >
-            <InputNumber min={1} max={12} style={{ width: '100%' }} />
+            <InputNumber min={1} max={365} style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item
             name="note"

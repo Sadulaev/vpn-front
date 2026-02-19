@@ -17,7 +17,7 @@ export interface Subscription {
   status: string;
   source: string;
   note?: string | null;
-  months: number;
+  days: number;
   startDate: string;
   endDate: string;
   createdAt: string;
@@ -59,7 +59,7 @@ export interface Subscription {
   clientId: string;
   status: string;
   note?: string | null;
-  months: number;
+  days: number;
   startDate: string;
   endDate: string;
   createdAt: string;
@@ -68,7 +68,7 @@ export interface Subscription {
 export interface CreateSubscriptionDto {
   clientId?: string;
   telegramId?: string;
-  months: number;
+  days: number;
   source?: 'admin' | 'bot';
   note?: string;
 }

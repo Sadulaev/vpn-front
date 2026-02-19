@@ -38,9 +38,10 @@ const LoginPage = () => {
       justifyContent: 'center',
       alignItems: 'center',
       minHeight: '100vh',
+      padding: '20px',
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
     }}>
-      <Card style={{ width: 400, boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}>
+      <Card style={{ width: '100%', maxWidth: 400, boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <Title level={2}>Hyper VPN</Title>
           <Typography.Text type="secondary">Панель управления</Typography.Text>

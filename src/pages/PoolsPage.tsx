@@ -133,9 +133,16 @@ const PoolsPage = () => {
   ];
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-        <Title level={2}>Пулы серверов</Title>
+    <div style={{ padding: '0 16px' }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '12px',
+        marginBottom: 16 
+      }}>
+        <Title level={2} style={{ margin: 0 }}>Пулы серверов</Title>
         <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
           Добавить пул
         </Button>
@@ -146,6 +153,7 @@ const PoolsPage = () => {
         dataSource={pools}
         rowKey="id"
         loading={loading}
+        scroll={{ x: 700 }}
       />
 
       <Modal

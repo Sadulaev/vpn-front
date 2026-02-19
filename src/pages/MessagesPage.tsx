@@ -47,7 +47,7 @@ export default function MessagesPage() {
   };
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{ padding: '16px 16px 24px' }}>
       <Title level={2}>Отправка сообщений</Title>
       <Text type="secondary">
         Отправляйте сообщения через Telegram бота всем пользователям или одному конкретному пользователю.

@@ -130,9 +130,16 @@ const ClientsPage = () => {
   ];
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-        <Title level={2}>Клиенты</Title>
+    <div style={{ padding: '0 16px' }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '12px',
+        marginBottom: 16 
+      }}>
+        <Title level={2} style={{ margin: 0 }}>Клиенты</Title>
         <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
           Добавить клиента
         </Button>
@@ -143,6 +150,7 @@ const ClientsPage = () => {
         dataSource={clients}
         rowKey="id"
         loading={loading}
+        scroll={{ x: 800 }}
       />
 
       <Modal
