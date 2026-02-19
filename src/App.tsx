@@ -11,7 +11,7 @@ import MessagesPage from './pages/MessagesPage';
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter basename='/admin'>
+      <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           
