@@ -105,6 +105,12 @@ export interface SendMessageDto {
   telegramId?: string;
 }
 
+export interface SendMessageResponse {
+  success: boolean;
+  data?: { sent: number; failed: number; errors: string[] }; // Для одиночного сообщения
+  message?: string; // Для массовой рассылки в фоне
+}
+
 // API methods
 export const subscriptionsAPI = {
   getAll: (params?: { search?: string; source?: string }) => 
@@ -113,7 +119,7 @@ export const subscriptionsAPI = {
   processExpired: () => api.post('/subscriptions/process-expired'),
   getUrl: (id: string) => api.get<{ success: boolean; data: { subscriptionUrl: string } }>(`/subscriptions/${id}/url`),
   delete: (id: string) => api.post(`/subscriptions/${id}/delete`),
-  sendMessage: (data: SendMessageDto) => api.post<{ success: boolean; data: { sent: number; failed: number; errors: string[] } }>('/subscriptions/send-message', data),
+  sendMessage: (data: SendMessageDto) => api.post<SendMessageResponse>('/subscriptions/send-message', data),
 };
 
 export const poolsAPI = {

@@ -28,14 +28,27 @@ export default function MessagesPage() {
       });
 
       if (response.data.success) {
-        const result = response.data.data;
-        setLastResult(result);
-
-        if (result.failed === 0) {
-          message.success(`Сообщение успешно отправлено ${result.sent} пользовател${result.sent === 1 ? 'ю' : 'ям'}!`);
+        // Если это массовая рассылка - приходит message
+        if (response.data.message) {
+          message.success(
+            'Массовая рассылка запущена! Проверьте логи сервера для просмотра результатов.',
+            10
+          );
           form.resetFields(['message', 'telegramId']);
         } else {
-          message.warning(`Отправлено ${result.sent}, не удалось отправить ${result.failed} сообщений`);
+          // Одиночное сообщение - приходит data
+          const result = response.data.data;
+          
+          if (result) {
+            setLastResult(result);
+
+            if (result.failed === 0) {
+              message.success(`Сообщение успешно отправлено!`);
+              form.resetFields(['message', 'telegramId']);
+            } else {
+              message.error('Не удалось отправить сообщение');
+            }
+          }
         }
       }
     } catch (error: any) {
@@ -50,7 +63,7 @@ export default function MessagesPage() {
     <div style={{ padding: '16px 16px 24px' }}>
       <Title level={2}>Отправка сообщений</Title>
       <Text type="secondary">
-        Отправляйте сообщения через Telegram бота всем пользователям или одному конкретному пользователю.
+        Отправляйте сообщения через Telegram бота одному пользователю или всем из Google Sheets (в фоновом режиме)
       </Text>
 
       <Card style={{ marginTop: '24px', maxWidth: '800px' }}>
@@ -75,7 +88,7 @@ export default function MessagesPage() {
           <Form.Item
             label="Telegram ID"
             name="telegramId"
-            extra="Оставьте пустым для отправки всем пользователям с активными подписками"
+            extra="Оставьте пустым для массовой рассылки всем из Google Sheets (колонка A). Результаты будут в логах сервера."
           >
             <Input
               placeholder="Опционально: ID конкретного пользователя"
