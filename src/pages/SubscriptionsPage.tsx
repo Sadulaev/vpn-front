@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form, Input, InputNumber, message, Space, Typography, Tag, Tooltip, Popconfirm, Select, Alert } from 'antd';
 import { PlusOutlined, CopyOutlined, CheckCircleOutlined, LinkOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import { subscriptionsAPI, Subscription } from '../services/api';
-import type { ColumnsType } from 'antd/es/table';
+import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import dayjs from 'dayjs';
 
 const { Title } = Typography;
@@ -17,6 +17,15 @@ const SubscriptionsPage = () => {
   const [sourceFilter, setSourceFilter] = useState<'admin' | 'bot' | undefined>('admin');
   const [creationResult, setCreationResult] = useState<any>(null);
   const [resultModalVisible, setResultModalVisible] = useState(false);
+  const [urlModalVisible, setUrlModalVisible] = useState(false);
+  const [subscriptionUrl, setSubscriptionUrl] = useState('');
+  const [pagination, setPagination] = useState<TablePaginationConfig>({
+    current: 1,
+    pageSize: 20,
+    showSizeChanger: true,
+    showTotal: (total) => `Всего: ${total}`,
+    pageSizeOptions: ['10', '20', '50', '100'],
+  });
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -77,14 +86,19 @@ const SubscriptionsPage = () => {
     message.success('Скопировано в буфер обмена');
   };
 
-  const copySubscriptionUrl = async (id: string) => {
+  const showSubscriptionUrl = async (id: string) => {
     try {
       const response = await subscriptionsAPI.getUrl(id);
       const url = response.data.data.subscriptionUrl;
-      copyToClipboard(url);
+      setSubscriptionUrl(url);
+      setUrlModalVisible(true);
     } catch (error) {
       message.error('Ошибка получения URL подписки');
     }
+  };
+
+  const handleCopyUrl = () => {
+    copyToClipboard(subscriptionUrl);
   };
 
   const handleDelete = async (id: string) => {
@@ -99,10 +113,22 @@ const SubscriptionsPage = () => {
 
   const columns: ColumnsType<Subscription> = [
     {
+      title: '№',
+      key: 'index',
+      width: 60,
+      fixed: 'left',
+      render: (_: any, __: any, index: number) => {
+        const current = pagination.current || 1;
+        const pageSize = pagination.pageSize || 20;
+        return (current - 1) * pageSize + index + 1;
+      },
+    },
+    {
       title: 'ID',
       dataIndex: 'id',
       key: 'id',
       width: 100,
+      responsive: ['md'] as any,
       render: (text: string) => (
         <Tooltip title="Скопировать ID">
           <Button 
@@ -121,6 +147,7 @@ const SubscriptionsPage = () => {
       dataIndex: 'clientId',
       key: 'clientId',
       width: 150,
+      ellipsis: true,
       render: (text: string) => (
         <Tooltip title="Скопировать Client ID">
           <Button 
@@ -128,6 +155,7 @@ const SubscriptionsPage = () => {
             size="small"
             icon={<CopyOutlined />}
             onClick={() => copyToClipboard(text)}
+            style={{ padding: 0 }}
           >
             {text.slice(0, 8)}...
           </Button>
@@ -139,6 +167,7 @@ const SubscriptionsPage = () => {
       dataIndex: 'note',
       key: 'note',
       ellipsis: true,
+      responsive: ['lg'] as any,
       render: (text: string) => text || '-',
     },
     {
@@ -146,6 +175,7 @@ const SubscriptionsPage = () => {
       dataIndex: 'source',
       key: 'source',
       width: 100,
+      responsive: ['md'] as any,
       render: (source: string) => (
         <Tag color={source === 'admin' ? 'blue' : 'green'}>
           {source === 'admin' ? 'Админ' : 'Бот'}
@@ -172,18 +202,23 @@ const SubscriptionsPage = () => {
       title: 'Период',
       dataIndex: 'days',
       key: 'days',
+      width: 90,
+      responsive: ['lg'] as any,
       render: (days: number) => `${days} дн.`,
     },
     {
       title: 'Начало',
       dataIndex: 'startDate',
       key: 'startDate',
+      width: 110,
+      responsive: ['xl'] as any,
       render: (date: string) => dayjs(date).format('DD.MM.YYYY'),
     },
     {
       title: 'Окончание',
       dataIndex: 'endDate',
       key: 'endDate',
+      width: 110,
       render: (date: string) => {
         const endDate = dayjs(date);
         const isExpired = endDate.isBefore(dayjs());
@@ -198,21 +233,24 @@ const SubscriptionsPage = () => {
       title: 'Создана',
       dataIndex: 'createdAt',
       key: 'createdAt',
+      width: 150,
+      responsive: ['lg'] as any,
       render: (date: string) => dayjs(date).format('DD.MM.YYYY HH:mm'),
     },
     {
       title: 'Действия',
       key: 'actions',
-      width: 150,
+      width: 180,
+      fixed: 'right',
       render: (_, record) => (
-        <Space>
-          <Tooltip title="Скопировать URL подписки">
+        <Space size="small" wrap>
+          <Tooltip title="Показать URL подписки">
             <Button 
               type="primary" 
               ghost
               size="small"
               icon={<LinkOutlined />}
-              onClick={() => copySubscriptionUrl(record.id)}
+              onClick={() => showSubscriptionUrl(record.id)}
             >
               URL
             </Button>
@@ -224,9 +262,7 @@ const SubscriptionsPage = () => {
             okText="Да"
             cancelText="Нет"
           >
-            <Button danger icon={<DeleteOutlined />} size="small">
-              Удалить
-            </Button>
+            <Button danger icon={<DeleteOutlined />} size="small" />
           </Popconfirm>
         </Space>
       ),
@@ -288,8 +324,11 @@ const SubscriptionsPage = () => {
         dataSource={subscriptions}
         rowKey="id"
         loading={loading}
-        pagination={{ pageSize: 20 }}
-        scroll={{ x: 1200 }}
+        pagination={pagination}
+        onChange={(newPagination) => setPagination(newPagination)}
+        scroll={{ x: 900 }}
+        size="small"
+        sticky
       />
 
       <Modal
@@ -388,6 +427,40 @@ const SubscriptionsPage = () => {
             )}
           </Space>
         )}
+      </Modal>
+
+      <Modal
+        title="URL подписки"
+        open={urlModalVisible}
+        onCancel={() => setUrlModalVisible(false)}
+        footer={[
+          <Button key="close" onClick={() => setUrlModalVisible(false)}>
+            Закрыть
+          </Button>,
+          <Button 
+            key="copy" 
+            type="primary" 
+            icon={<CopyOutlined />}
+            onClick={handleCopyUrl}
+          >
+            Копировать
+          </Button>
+        ]}
+      >
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Input.TextArea
+            value={subscriptionUrl}
+            readOnly
+            autoSize={{ minRows: 3, maxRows: 6 }}
+            style={{ fontFamily: 'monospace', fontSize: '12px' }}
+          />
+          <Alert
+            message="Скопируйте эту ссылку и отправьте пользователю"
+            description="Пользователь должен добавить эту ссылку в приложение v2ray как subscription URL"
+            type="info"
+            showIcon
+          />
+        </Space>
       </Modal>
     </div>
   );

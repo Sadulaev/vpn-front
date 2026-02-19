@@ -1,17 +1,26 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, message, Popconfirm, Space, Typography, Switch, Tag } from 'antd';
+import { Table, Button, Modal, Form, Input, message, Popconfirm, Space, Typography, Tag } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { poolsAPI, ServerPool } from '../services/api';
+// import { clientsAPI, Client } from '../services/api';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 
 const { Title } = Typography;
-const { TextArea } = Input;
 
-const PoolsPage = () => {
-  const [pools, setPools] = useState<ServerPool[]>([]);
+// Временные типы пока нет API
+interface Client {
+  id: string;
+  telegramId: string;
+  username?: string;
+  firstName?: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+const ClientsPage = () => {
+  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingPool, setEditingPool] = useState<ServerPool | null>(null);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [pagination, setPagination] = useState<TablePaginationConfig>({
     current: 1,
     pageSize: 20,
@@ -22,61 +31,62 @@ const PoolsPage = () => {
   const [form] = Form.useForm();
 
   useEffect(() => {
-    fetchPools();
+    fetchClients();
   }, []);
 
-  const fetchPools = async () => {
+  const fetchClients = async () => {
     setLoading(true);
     try {
-      const response = await poolsAPI.getAll();
-      setPools(response.data);
+      // const response = await clientsAPI.getAll();
+      // setClients(response.data);
+      setClients([]); // Временно пустой массив
+      message.info('API клиентов не реализован');
     } catch (error) {
-      message.error('Ошибка загрузки пулов');
+      message.error('Ошибка загрузки клиентов');
     } finally {
       setLoading(false);
     }
   };
 
   const handleCreate = () => {
-    setEditingPool(null);
+    setEditingClient(null);
     form.resetFields();
-    form.setFieldsValue({ isActive: true });
     setModalVisible(true);
   };
 
-  const handleEdit = (pool: ServerPool) => {
-    setEditingPool(pool);
-    form.setFieldsValue(pool);
+  const handleEdit = (client: Client) => {
+    setEditingClient(client);
+    form.setFieldsValue(client);
     setModalVisible(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (_id: string) => {
     try {
-      await poolsAPI.delete(id);
-      message.success('Пул удалён');
-      fetchPools();
+      // await clientsAPI.delete(id);
+      message.success('Клиент удалён');
+      fetchClients();
     } catch (error) {
-      message.error('Ошибка удаления пула');
+      message.error('Ошибка удаления клиента');
     }
   };
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (_values: any) => {
     try {
-      if (editingPool) {
-        await poolsAPI.update(editingPool.id, values);
-        message.success('Пул обновлён');
+      if (editingClient) {
+        // await clientsAPI.update(editingClient.id, values);
+        message.success('Клиент обновлён');
       } else {
-        await poolsAPI.create(values);
-        message.success('Пул создан');
+        // await clientsAPI.create(values);
+        message.success('Клиент создан');
       }
       setModalVisible(false);
-      fetchPools();
+      fetchClients();
     } catch (error) {
-      message.error('Ошибка сохранения пула');
+      message.error('Ошибка сохранения клиента');
     }
   };
 
-  const columns: ColumnsType<ServerPool> = [
+  const columns: ColumnsType<Client> = [
     {
       title: '№',
       key: 'index',
@@ -89,40 +99,42 @@ const PoolsPage = () => {
       },
     },
     {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-      width: 80,
+      title: 'Telegram ID',
+      dataIndex: 'telegramId',
+      key: 'telegramId',
+      width: 120,
     },
     {
-      title: 'Название',
-      dataIndex: 'name',
-      key: 'name',
+      title: 'Имя пользователя',
+      dataIndex: 'username',
+      key: 'username',
+      responsive: ['md'] as any,
+      render: (text) => text || '—',
     },
     {
-      title: 'Описание',
-      dataIndex: 'description',
-      key: 'description',
-      ellipsis: true,
+      title: 'Имя',
+      dataIndex: 'firstName',
+      key: 'firstName',
       responsive: ['lg'] as any,
       render: (text) => text || '—',
     },
     {
-      title: 'Серверов',
-      dataIndex: 'servers',
-      key: 'servers',
-      width: 100,
-      render: (servers) => servers?.length || 0,
-    },
-    {
-      title: 'Активен',
+      title: 'Статус',
       dataIndex: 'isActive',
       key: 'isActive',
       render: (active: boolean) => (
         <Tag color={active ? 'green' : 'red'}>
-          {active ? 'Да' : 'Нет'}
+          {active ? 'Активен' : 'Неактивен'}
         </Tag>
       ),
+    },
+    {
+      title: 'Дата создания',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      width: 150,
+      responsive: ['xl'] as any,
+      render: (date: string) => new Date(date).toLocaleString('ru-RU'),
     },
     {
       title: 'Действия',
@@ -139,8 +151,7 @@ const PoolsPage = () => {
             onClick={() => handleEdit(record)}
           />
           <Popconfirm
-            title="Удалить пул?"
-            description="Серверы будут отвязаны от пула"
+            title="Удалить клиента?"
             onConfirm={() => handleDelete(record.id)}
             okText="Да"
             cancelText="Нет"
@@ -162,15 +173,15 @@ const PoolsPage = () => {
         gap: '12px',
         marginBottom: 16 
       }}>
-        <Title level={2} style={{ margin: 0 }}>Пулы серверов</Title>
+        <Title level={2} style={{ margin: 0 }}>Клиенты</Title>
         <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-          Добавить пул
+          Добавить клиента
         </Button>
       </div>
 
       <Table
         columns={columns}
-        dataSource={pools}
+        dataSource={clients}
         rowKey="id"
         loading={loading}
         pagination={pagination}
@@ -181,24 +192,24 @@ const PoolsPage = () => {
       />
 
       <Modal
-        title={editingPool ? 'Редактировать пул' : 'Добавить пул'}
+        title={editingClient ? 'Редактировать клиента' : 'Добавить клиента'}
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         onOk={() => form.submit()}
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
-            name="name"
-            label="Название"
-            rules={[{ required: true, message: 'Введите название пула' }]}
+            name="telegramId"
+            label="Telegram ID"
+            rules={[{ required: true, message: 'Введите Telegram ID' }]}
           >
-            <Input placeholder="Европа, Азия и т.д." />
+            <Input disabled={!!editingClient} />
           </Form.Item>
-          <Form.Item name="description" label="Описание">
-            <TextArea rows={3} placeholder="Описание пула серверов" />
+          <Form.Item name="username" label="Имя пользователя">
+            <Input />
           </Form.Item>
-          <Form.Item name="isActive" label="Активен" valuePropName="checked">
-            <Switch />
+          <Form.Item name="firstName" label="Имя">
+            <Input />
           </Form.Item>
         </Form>
       </Modal>
@@ -206,4 +217,4 @@ const PoolsPage = () => {
   );
 };
 
-export default PoolsPage;
+export default ClientsPage;

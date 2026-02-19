@@ -3,7 +3,7 @@ import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Popcon
 import { PlusOutlined, EditOutlined, DeleteOutlined, SyncOutlined } from '@ant-design/icons';
 import { serversAPI, poolsAPI, XuiServer, ServerPool } from '../services/api';
 import { parseVlessKey } from '../utils/vlessParser';
-import type { ColumnsType } from 'antd/es/table';
+import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 
 const { Title } = Typography;
 
@@ -17,6 +17,13 @@ const ServersPage = () => {
   const [syncResult, setSyncResult] = useState<any>(null);
   const [syncResultModalVisible, setSyncResultModalVisible] = useState(false);
   const [syncing, setSyncing] = useState<number | null>(null);
+  const [pagination, setPagination] = useState<TablePaginationConfig>({
+    current: 1,
+    pageSize: 10,
+    showSizeChanger: true,
+    showTotal: (total) => `Всего: ${total}`,
+    pageSizeOptions: ['10', '20', '50'],
+  });
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -130,79 +137,100 @@ const ServersPage = () => {
 
   const columns: ColumnsType<XuiServer> = [
     {
+      title: '№',
+      key: 'index',
+      width: 50,
+      fixed: 'left',
+      render: (_: any, __: any, index: number) => {
+        const current = pagination.current || 1;
+        const pageSize = pagination.pageSize || 10;
+        return (current - 1) * pageSize + index + 1;
+      },
+    },
+    {
       title: 'ID',
       dataIndex: 'id',
       key: 'id',
       width: 60,
+      responsive: ['lg'] as any,
     },
     {
       title: 'Название',
       dataIndex: 'name',
       key: 'name',
+      width: 150,
+      ellipsis: true,
     },
     {
       title: 'Пул',
       dataIndex: 'serverPool',
       key: 'serverPool',
+      width: 120,
+      responsive: ['md'] as any,
+      ellipsis: true,
       render: (pool) => pool?.name || '—',
     },
     {
-      title: 'Публичный хост',
+      title: 'Хост',
       dataIndex: 'publicHost',
       key: 'publicHost',
+      width: 150,
+      responsive: ['xl'] as any,
+      ellipsis: true,
     },
     {
       title: 'Порт',
       dataIndex: 'publicPort',
       key: 'publicPort',
+      width: 70,
+      responsive: ['lg'] as any,
     },
     {
       title: 'Лимит',
       dataIndex: 'usersLimit',
       key: 'usersLimit',
+      width: 70,
+      responsive: ['xl'] as any,
     },
     {
       title: 'Статус',
       dataIndex: 'status',
       key: 'status',
+      width: 100,
       render: (status: string) => (
         <Tag color={status === 'active' ? 'green' : status === 'failed' ? 'red' : 'gray'}>
-          {status === 'active' ? 'Активен' : status === 'failed' ? 'Неактивен' : status}
+          {status === 'active' ? 'Актив' : status === 'failed' ? 'Неакт' : status}
         </Tag>
       ),
     },
     {
       title: 'Действия',
       key: 'actions',
+      width: 150,
+      fixed: 'right',
       render: (_, record) => (
-        <Space>
+        <Space size="small" wrap>
           <Button 
             icon={<SyncOutlined />} 
             size="small"
             onClick={() => handleSync(record.id)}
             loading={syncing === record.id}
-            title="Синхронизировать клиентов"
-          >
-            Синхр.
-          </Button>
+            title="Синхронизировать"
+          />
           <Button 
             type="primary" 
             ghost 
             icon={<EditOutlined />} 
             size="small"
             onClick={() => handleEdit(record)}
-          >
-            Изменить
-          </Button>
+          />
           <Popconfirm
             title="Удалить сервер?"
             onConfirm={() => handleDelete(record.id)}
             okText="Да"
             cancelText="Нет"
           >
-            <Button danger icon={<DeleteOutlined />} size="small">
-              Удалить
-            </Button>
+            <Button danger icon={<DeleteOutlined />} size="small" />
           </Popconfirm>
         </Space>
       ),
@@ -230,7 +258,11 @@ const ServersPage = () => {
         dataSource={servers}
         rowKey="id"
         loading={loading}
-        scroll={{ x: 1400 }}
+        pagination={pagination}
+        onChange={(newPagination) => setPagination(newPagination)}
+        scroll={{ x: 800 }}
+        size="small"
+        sticky
       />
 
       <Modal
