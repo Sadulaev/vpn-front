@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Button, Modal, Form, Input, InputNumber, Select, message, Tag, Empty, Spin, Pagination } from 'antd';
+import { useState, useEffect, useRef } from 'react';
+import { Button, Modal, Form, Input, InputNumber, Select, message, Tag, Empty, Spin, Pagination, Progress } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SyncOutlined } from '@ant-design/icons';
-import { serversAPI, poolsAPI, XuiServer, ServerPool } from '../services/api';
+import { serversAPI, poolsAPI, XuiServer, ServerPool, SyncStatus } from '../services/api';
 import { parseVlessKey } from '../utils/vlessParser';
 
 const { TextArea } = Input;
@@ -13,16 +13,24 @@ const ServersPage = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingServer, setEditingServer] = useState<XuiServer | null>(null);
   const [vlessKey, setVlessKey] = useState('');
-  const [syncing, setSyncing] = useState<number | null>(null);
+  const [syncStatuses, setSyncStatuses] = useState<Map<number, SyncStatus>>(new Map());
   const [syncResultModal, setSyncResultModal] = useState(false);
-  const [syncResult, setSyncResult] = useState<any>(null);
+  const [syncResult, setSyncResult] = useState<SyncStatus | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [form] = Form.useForm();
+  const pollIntervalRef = useRef<number | null>(null);
 
   useEffect(() => {
     fetchServers();
     fetchPools();
+    
+    // Cleanup на размонтировании
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
   }, []);
 
   const fetchServers = async () => {
@@ -104,15 +112,77 @@ const ServersPage = () => {
   };
 
   const handleSync = async (serverId: number) => {
-    setSyncing(serverId);
     try {
+      // Запускаем синхронизацию
       const response = await serversAPI.sync(serverId);
-      setSyncResult(response.data);
-      setSyncResultModal(true);
-    } catch {
-      message.error('Ошибка синхронизации');
-    } finally {
-      setSyncing(null);
+      const { message: msg } = response.data;
+      
+      message.info(msg);
+      
+      // Начинаем опрос статуса
+      pollSyncStatus(serverId);
+      
+      // Запускаем интервал для обновления статуса
+      if (!pollIntervalRef.current) {
+        pollIntervalRef.current = setInterval(() => {
+          updateSyncStatuses();
+        }, 2000); // Обновляем каждые 2 секунды
+      }
+    } catch (error: any) {
+      message.error(error.response?.data?.message || 'Ошибка запуска синхронизации');
+    }
+  };
+
+  const pollSyncStatus = async (serverId: number) => {
+    try {
+      const response = await serversAPI.getSyncStatus(serverId);
+      const status = response.data;
+      
+      setSyncStatuses(prev => {
+        const newMap = new Map(prev);
+        newMap.set(serverId, status);
+        return newMap;
+      });
+      
+      // Если синхронизация завершена или провалилась, показываем результат
+      if (status.status === 'completed' || status.status === 'failed') {
+        setSyncResult(status);
+        setSyncResultModal(true);
+        
+        // Удаляем из списка активных
+        setSyncStatuses(prev => {
+          const newMap = new Map(prev);
+          newMap.delete(serverId);
+          return newMap;
+        });
+        
+        // Если нет больше активных синхронизаций, останавливаем опрос
+        if (syncStatuses.size <= 1) {
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to poll sync status:', error);
+    }
+  };
+
+  const updateSyncStatuses = async () => {
+    const serverIds = Array.from(syncStatuses.keys());
+    
+    if (serverIds.length === 0) {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+      return;
+    }
+    
+    // Обновляем статус каждого активного сервера
+    for (const serverId of serverIds) {
+      await pollSyncStatus(serverId);
     }
   };
 
@@ -158,9 +228,39 @@ const ServersPage = () => {
                   <div><span style={{ color: '#999' }}>Security:</span> {server.security}</div>
                 </div>
 
+                {/* Прогресс синхронизации */}
+                {syncStatuses.has(server.id) && (() => {
+                  const status = syncStatuses.get(server.id)!;
+                  const progress = status.total > 0 ? Math.round((status.processed / status.total) * 100) : 0;
+                  const estimatedSec = status.estimatedTimeMs ? Math.ceil(status.estimatedTimeMs / 1000) : 0;
+                  
+                  return (
+                    <div style={{ marginBottom: 12, padding: 12, background: '#f5f5f5', borderRadius: 8 }}>
+                      <div style={{ fontSize: 12, color: '#666', marginBottom: 8 }}>
+                        Синхронизация: {status.processed} / {status.total} клиентов
+                        {status.status === 'pending' && ` (ожидаем ~${estimatedSec} сек)`}
+                      </div>
+                      <Progress 
+                        percent={progress} 
+                        status={status.status === 'in-progress' ? 'active' : 'normal'}
+                        size="small"
+                      />
+                      <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>
+                        Успешно: {status.success} | Ошибки: {status.failed}
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <Button icon={<SyncOutlined />} loading={syncing === server.id} onClick={() => handleSync(server.id)} style={{ flex: 1 }}>
-                    Синхр.
+                  <Button 
+                    icon={<SyncOutlined />} 
+                    loading={syncStatuses.has(server.id) && syncStatuses.get(server.id)?.status === 'in-progress'} 
+                    disabled={syncStatuses.has(server.id)}
+                    onClick={() => handleSync(server.id)} 
+                    style={{ flex: 1 }}
+                  >
+                    {syncStatuses.has(server.id) ? 'Синхр...' : 'Синхр.'}
                   </Button>
                   <Button icon={<EditOutlined />} onClick={() => handleEdit(server)} />
                   <Button danger icon={<DeleteOutlined />} onClick={() => {
@@ -310,21 +410,37 @@ const ServersPage = () => {
 
       {/* Sync Result Modal */}
       <Modal
-        title="Результат синхронизации"
+        title={`Результат синхронизации - ${syncResult?.serverName || ''}`}
         open={syncResultModal}
         onCancel={() => setSyncResultModal(false)}
         footer={<Button type="primary" onClick={() => setSyncResultModal(false)}>OK</Button>}
       >
         {syncResult && (
           <div>
-            <div style={{ background: syncResult.failed > 0 ? '#fff7e6' : '#f6ffed', border: `1px solid ${syncResult.failed > 0 ? '#ffd591' : '#b7eb8f'}`, borderRadius: 8, padding: 12 }}>
-              <div>Всего: {syncResult.total}</div>
-              <div style={{ color: '#52c41a' }}>Успешно: {syncResult.success}</div>
+            <div style={{ 
+              background: syncResult.status === 'completed' ? '#f6ffed' : '#fff2e8', 
+              border: `1px solid ${syncResult.status === 'completed' ? '#b7eb8f' : '#ffbb96'}`, 
+              borderRadius: 8, 
+              padding: 12,
+              marginBottom: 12 
+            }}>
+              <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                Статус: {syncResult.status === 'completed' ? '✓ Завершено' : '⚠ Завершено с ошибками'}
+              </div>
+              <div>Всего клиентов: {syncResult.total}</div>
+              <div style={{ color: '#52c41a' }}>Успешно добавлено: {syncResult.success}</div>
               {syncResult.failed > 0 && <div style={{ color: '#ff4d4f' }}>Ошибок: {syncResult.failed}</div>}
+              
+              {syncResult.completedAt && syncResult.startedAt && (
+                <div style={{ marginTop: 8, fontSize: 12, color: '#999' }}>
+                  Время выполнения: {Math.ceil((new Date(syncResult.completedAt).getTime() - new Date(syncResult.startedAt).getTime()) / 1000)} сек
+                </div>
+              )}
             </div>
-            {syncResult.errors?.length > 0 && (
-              <div style={{ marginTop: 12, fontSize: 12, color: '#ff4d4f' }}>
-                {syncResult.errors.map((e: string, i: number) => <div key={i}>• {e}</div>)}
+            
+            {syncResult.error && (
+              <div style={{ padding: 12, background: '#fff2f0', border: '1px solid #ffccc7', borderRadius: 8, fontSize: 12, color: '#ff4d4f' }}>
+                <strong>Ошибка:</strong> {syncResult.error}
               </div>
             )}
           </div>

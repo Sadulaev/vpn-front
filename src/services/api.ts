@@ -100,6 +100,28 @@ export interface CreateServerDto {
   status?: string;
 }
 
+export interface SyncStartResponse {
+  status: 'started';
+  serverId: number;
+  serverName: string;
+  estimatedTimeMs: number;
+  message: string;
+}
+
+export interface SyncStatus {
+  serverId: number;
+  serverName: string;
+  status: 'pending' | 'in-progress' | 'completed' | 'failed';
+  total: number;
+  processed: number;
+  success: number;
+  failed: number;
+  startedAt: string;
+  completedAt?: string;
+  estimatedTimeMs?: number;
+  error?: string;
+}
+
 export interface SendMessageDto {
   message: string;
   telegramId?: string;
@@ -138,7 +160,10 @@ export const serversAPI = {
   update: (id: number, data: Partial<CreateServerDto>) => 
     api.put<XuiServer>(`/server-pools/servers/${id}`, data),
   delete: (id: number) => api.delete(`/server-pools/servers/${id}`),
-  sync: (id: number) => api.post<{ total: number; success: number; failed: number; errors: string[] }>(`/server-pools/servers/${id}/sync`),
+  sync: (id: number) => api.post<SyncStartResponse>(`/server-pools/servers/${id}/sync`),
+  getSyncStatus: (id: number) => api.get<SyncStatus>(`/server-pools/servers/${id}/sync-status`),
+  getAllSyncStatuses: () => api.get<SyncStatus[]>('/server-pools/sync-status/all'),
+  clearSyncStatus: (id: number) => api.delete(`/server-pools/servers/${id}/sync-status`),
 };
 
 export default api;
