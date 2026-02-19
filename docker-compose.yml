@@ -11,10 +11,10 @@ services:
         VITE_ADMIN_PASSWORD: ${VITE_ADMIN_PASSWORD}
     container_name: hyper-vpn-frontend
     ports:
-      - "127.0.0.1:3001:3000"  # Production static server
+      - "127.0.0.1:3001:3001"  # Production static server
     restart: always
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/"]
       interval: 30s
       timeout: 3s
       retries: 3
