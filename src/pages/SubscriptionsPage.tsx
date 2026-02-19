@@ -126,7 +126,7 @@ const SubscriptionsPage = () => {
         {/* Filters */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <Input
-            placeholder="Поиск..."
+            placeholder="Поиск по Client ID..."
             prefix={<SearchOutlined style={{ color: '#bbb' }} />}
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
