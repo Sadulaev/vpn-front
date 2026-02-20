@@ -271,8 +271,11 @@ const SubscriptionsPage = () => {
           <Form.Item name="telegramId" label="Telegram ID">
             <Input placeholder="123456789" />
           </Form.Item>
-          <Form.Item name="days" label="Период (дней)" rules={[{ required: true }]}>
+         <Form.Item name="days" label="Период (дней)" rules={[{ required: true }]}>
             <InputNumber min={1} max={365} style={{ width: '100%' }} />
+          </Form.Item>
+          <Form.Item name="deviceLimit" label="Лимит устройств" initialValue={3}>
+            <InputNumber min={1} max={10} style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item name="note" label="Примечание">
             <TextArea rows={2} maxLength={500} showCount />

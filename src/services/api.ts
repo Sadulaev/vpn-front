@@ -71,6 +71,7 @@ export interface CreateSubscriptionDto {
   days: number;
   source?: 'admin' | 'bot';
   note?: string;
+  deviceLimit?: number;
 }
 
 export interface CreatePoolDto {
@@ -164,6 +165,7 @@ export const serversAPI = {
   getSyncStatus: (id: number) => api.get<SyncStatus>(`/server-pools/servers/${id}/sync-status`),
   getAllSyncStatuses: () => api.get<SyncStatus[]>('/server-pools/sync-status/all'),
   clearSyncStatus: (id: number) => api.delete(`/server-pools/servers/${id}/sync-status`),
+  migrateEmails: (id: number) => api.post<{ total: number; updated: number; failed: number; errors: string[] }>(`/server-pools/servers/${id}/migrate-emails`),
 };
 
 export default api;
