@@ -96,16 +96,33 @@ const ServersPage = () => {
       if (editingServer) {
         await serversAPI.update(editingServer.id, values);
         message.success('Обновлено');
+        setModalVisible(false);
+        fetchServers();
       } else {
+        // Создание нового сервера
         const response = await serversAPI.create(values);
-        message.success('Создано');
-        if (response.data.syncResult) {
-          setSyncResult(response.data.syncResult);
-          setSyncResultModal(true);
+        const { server, syncStatus } = response.data;
+        
+        message.success(`Сервер создан: ${server.name}`);
+        
+        // Если синхронизация запущена - показываем прогресс
+        if (syncStatus.status === 'started') {
+          message.info(syncStatus.message);
+          
+          // Начинаем опрос статуса синхронизации для нового сервера
+          pollSyncStatus(server.id);
+          
+          // Запускаем интервал для обновления статуса
+          if (!pollIntervalRef.current) {
+            pollIntervalRef.current = setInterval(() => {
+              updateSyncStatuses();
+            }, 2000); // Обновляем каждые 2 секунды
+          }
         }
+        
+        setModalVisible(false);
+        fetchServers();
       }
-      setModalVisible(false);
-      fetchServers();
     } catch {
       message.error('Ошибка сохранения');
     }
