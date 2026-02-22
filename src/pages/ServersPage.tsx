@@ -150,45 +150,6 @@ const ServersPage = () => {
     }
   };
 
-  const handleMigrateEmails = async (serverId: number, serverName: string) => {
-    Modal.confirm({
-      title: 'Мигрировать email клиентов?',
-      content: `Это обновит email всех клиентов на сервере "${serverName}" с формата client-{uuid} на полный UUID. Процесс может занять несколько минут.`,
-      okText: 'Мигрировать',
-      cancelText: 'Отмена',
-      onOk: async () => {
-        const hide = message.loading('Миграция в процессе...', 0);
-        try {
-          const response = await serversAPI.migrateEmails(serverId);
-          hide();
-          
-          Modal.info({
-            title: 'Миграция завершена',
-            content: (
-              <div>
-                <div>Всего клиентов: {response.data.total}</div>
-                <div style={{ color: '#52c41a' }}>Обновлено: {response.data.updated}</div>
-                {response.data.failed > 0 && (
-                  <div style={{ color: '#ff4d4f' }}>Ошибок: {response.data.failed}</div>
-                )}
-                {response.data.errors.length > 0 && (
-                  <div style={{ marginTop: 8, fontSize: 12 }}>
-                    {response.data.errors.slice(0, 5).map((err, i) => (
-                      <div key={i}>• {err}</div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ),
-          });
-        } catch (error: any) {
-          hide();
-          message.error(error.response?.data?.message || 'Ошибка миграции');
-        }
-      },
-    });
-  };
-
   const pollSyncStatus = async (serverId: number) => {
     try {
       const response = await serversAPI.getSyncStatus(serverId);
@@ -281,6 +242,7 @@ const ServersPage = () => {
                   <div><span style={{ color: '#999' }}>Хост:</span> {server.publicHost}</div>
                   <div><span style={{ color: '#999' }}>Порт:</span> {server.publicPort}</div>
                   <div><span style={{ color: '#999' }}>Лимит:</span> {server.usersLimit}</div>
+                  <div><span style={{ color: '#999' }}>Клиентов:</span> {(server as any).clientsCount ?? '?'}</div>
                   <div><span style={{ color: '#999' }}>Security:</span> {server.security}</div>
                 </div>
 
@@ -317,13 +279,6 @@ const ServersPage = () => {
                     style={{ flex: '1 1 auto' }}
                   >
                     {syncStatuses.has(server.id) ? 'Синхр...' : 'Синхр.'}
-                  </Button>
-                  <Button 
-                    type="dashed"
-                    onClick={() => handleMigrateEmails(server.id, server.name)}
-                    style={{ flex: '1 1 auto' }}
-                  >
-                    UUID миграция
                   </Button>
                   <Button icon={<EditOutlined />} onClick={() => handleEdit(server)} />
                   <Button danger icon={<DeleteOutlined />} onClick={() => {
