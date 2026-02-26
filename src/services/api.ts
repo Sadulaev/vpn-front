@@ -166,6 +166,7 @@ export const serversAPI = {
   getAllSyncStatuses: () => api.get<SyncStatus[]>('/server-pools/sync-status/all'),
   clearSyncStatus: (id: number) => api.delete(`/server-pools/servers/${id}/sync-status`),
   migrateEmails: (id: number) => api.post<{ total: number; updated: number; failed: number; errors: string[] }>(`/server-pools/servers/${id}/migrate-emails`),
+  deleteExpiredClients: (id: number) => api.post<{ serversProcessed: number; clientsRemoved: number; errors: string[] }>(`/server-pools/servers/${id}/delete-expired-clients`),
 };
 
 export default api;

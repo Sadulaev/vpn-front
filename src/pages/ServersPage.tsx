@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button, Modal, Form, Input, InputNumber, Select, message, Tag, Empty, Spin, Pagination, Progress } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, SyncOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, SyncOutlined, ClearOutlined } from '@ant-design/icons';
 import { serversAPI, poolsAPI, XuiServer, ServerPool, SyncStatus } from '../services/api';
 import { parseVlessKey } from '../utils/vlessParser';
 
@@ -150,6 +150,36 @@ const ServersPage = () => {
     }
   };
 
+  const handleDeleteExpiredClients = async (serverId: number, serverName: string) => {
+    Modal.confirm({
+      title: 'Удалить просроченных клиентов?',
+      content: `Вы уверены, что хотите удалить всех клиентов с истекшими подписками с сервера "${serverName}"?`,
+      okText: 'Удалить',
+      cancelText: 'Отмена',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        const hide = message.loading('Удаление просроченных клиентов...', 0);
+        try {
+          const response = await serversAPI.deleteExpiredClients(serverId);
+          const { clientsRemoved, errors } = response.data;
+          
+          hide();
+          
+          if (errors.length > 0) {
+            message.warning(`Удалено ${clientsRemoved} клиентов, но были ошибки`);
+          } else {
+            message.success(`Удалено ${clientsRemoved} просроченных клиентов`);
+          }
+          
+          fetchServers();
+        } catch (error: any) {
+          hide();
+          message.error(error.response?.data?.message || 'Ошибка удаления просроченных клиентов');
+        }
+      },
+    });
+  };
+
   const pollSyncStatus = async (serverId: number) => {
     try {
       const response = await serversAPI.getSyncStatus(serverId);
@@ -279,6 +309,13 @@ const ServersPage = () => {
                     style={{ flex: '1 1 auto' }}
                   >
                     {syncStatuses.has(server.id) ? 'Синхр...' : 'Синхр.'}
+                  </Button>
+                  <Button 
+                    icon={<ClearOutlined />} 
+                    onClick={() => handleDeleteExpiredClients(server.id, server.name)}
+                    style={{ flex: '1 1 auto' }}
+                  >
+                    Очистить
                   </Button>
                   <Button icon={<EditOutlined />} onClick={() => handleEdit(server)} />
                   <Button danger icon={<DeleteOutlined />} onClick={() => {
