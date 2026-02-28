@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Button, Modal, Form, Input, InputNumber, Select, message, Tag, Empty, Spin, Pagination, Progress } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, SyncOutlined, ClearOutlined } from '@ant-design/icons';
+import { Button, Modal, Form, Input, InputNumber, Select, message, Tag, Empty, Spin, Pagination, Progress, Checkbox, Divider } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, SyncOutlined, ClearOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
 import { serversAPI, poolsAPI, XuiServer, ServerPool, SyncStatus } from '../services/api';
 import { parseVlessKey } from '../utils/vlessParser';
 
@@ -18,6 +18,7 @@ const ServersPage = () => {
   const [syncResult, setSyncResult] = useState<SyncStatus | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [isSeparator, setIsSeparator] = useState(false);
   const [form] = Form.useForm();
   const pollIntervalRef = useRef<number | null>(null);
 
@@ -37,7 +38,14 @@ const ServersPage = () => {
     setLoading(true);
     try {
       const response = await serversAPI.getAll();
-      setServers(response.data);
+      // Сортируем по displayOrder, затем по id
+      const sortedServers = response.data.sort((a, b) => {
+        if (a.displayOrder !== b.displayOrder) {
+          return a.displayOrder - b.displayOrder;
+        }
+        return a.id - b.id;
+      });
+      setServers(sortedServers);
     } catch {
       message.error('Ошибка загрузки');
     } finally {
@@ -57,14 +65,16 @@ const ServersPage = () => {
   const handleCreate = () => {
     setEditingServer(null);
     setVlessKey('');
+    setIsSeparator(false);
     form.resetFields();
-    form.setFieldsValue({ publicPort: 443, security: 'reality', fp: 'chrome', spx: '/', usersLimit: 100, status: 'active' });
+    form.setFieldsValue({ publicPort: 443, security: 'reality', fp: 'chrome', spx: '/', usersLimit: 100, status: 'active', displayOrder: 0, isSeparator: false });
     setModalVisible(true);
   };
 
   const handleEdit = (server: XuiServer) => {
     setEditingServer(server);
     setVlessKey('');
+    setIsSeparator(server.isSeparator || false);
     form.setFieldsValue(server);
     setModalVisible(true);
   };
@@ -235,6 +245,42 @@ const ServersPage = () => {
 
   const paginatedData = servers.slice((page - 1) * pageSize, page * pageSize);
 
+  const handleMoveUp = async (index: number) => {
+    if (index === 0) return;
+    const targetServer = servers[index];
+    const prevServer = servers[index - 1];
+    
+    // Меняем displayOrder местами
+    try {
+      await Promise.all([
+        serversAPI.update(targetServer.id, { displayOrder: prevServer.displayOrder }),
+        serversAPI.update(prevServer.id, { displayOrder: targetServer.displayOrder }),
+      ]);
+      message.success('Порядок обновлен');
+      fetchServers();
+    } catch {
+      message.error('Ошибка обновления порядка');
+    }
+  };
+
+  const handleMoveDown = async (index: number) => {
+    if (index === servers.length - 1) return;
+    const targetServer = servers[index];
+    const nextServer = servers[index + 1];
+    
+    // Меняем displayOrder местами
+    try {
+      await Promise.all([
+        serversAPI.update(targetServer.id, { displayOrder: nextServer.displayOrder }),
+        serversAPI.update(nextServer.id, { displayOrder: targetServer.displayOrder }),
+      ]);
+      message.success('Порядок обновлен');
+      fetchServers();
+    } catch {
+      message.error('Ошибка обновления порядка');
+    }
+  };
+
   return (
     <div>
       {/* Header */}
@@ -253,21 +299,58 @@ const ServersPage = () => {
       ) : (
         <>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {paginatedData.map((server, index) => (
-              <div key={server.id} style={{ background: '#fff', borderRadius: 12, padding: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
+            {paginatedData.map((server, index) => {
+              const globalIndex = (page - 1) * pageSize + index;
+              const isSep = server.isSeparator;
+              
+              return (
+              <div 
+                key={server.id} 
+                style={{ 
+                  background: isSep ? '#f0f5ff' : '#fff', 
+                  borderRadius: 12, 
+                  padding: 16, 
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+                  border: isSep ? '1px dashed #1890ff' : 'none',
+                }}
+              >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                  <div>
-                    <span style={{ color: '#999', fontSize: 12 }}>#{(page - 1) * pageSize + index + 1}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ color: '#999', fontSize: 12 }}>#{globalIndex + 1}</span>
+                      <span style={{ color: '#999', fontSize: 11 }}>порядок: {server.displayOrder}</span>
+                    </div>
                     <div style={{ fontWeight: 600, fontSize: 16 }}>{server.name}</div>
+                    {isSep && server.separatorText && (
+                      <div style={{ marginTop: 4, color: '#1890ff', fontSize: 13 }}>📌 {server.separatorText}</div>
+                    )}
                     {server.serverPool && (
                       <Tag color="blue" style={{ marginTop: 4 }}>{server.serverPool.name}</Tag>
                     )}
+                    {isSep && <Tag color="purple" style={{ marginTop: 4 }}>Сепаратор</Tag>}
                   </div>
-                  <Tag color={server.status === 'active' ? 'green' : 'red'}>
-                    {server.status === 'active' ? 'Актив' : 'Неакт'}
-                  </Tag>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <Tag color={server.status === 'active' ? 'green' : 'red'}>
+                      {server.status === 'active' ? 'Актив' : 'Неакт'}
+                    </Tag>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <Button 
+                        size="small" 
+                        icon={<ArrowUpOutlined />} 
+                        disabled={globalIndex === 0}
+                        onClick={() => handleMoveUp(globalIndex)}
+                      />
+                      <Button 
+                        size="small" 
+                        icon={<ArrowDownOutlined />} 
+                        disabled={globalIndex === servers.length - 1}
+                        onClick={() => handleMoveDown(globalIndex)}
+                      />
+                    </div>
+                  </div>
                 </div>
 
+                {!isSep && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 13, color: '#666', marginBottom: 12 }}>
                   <div><span style={{ color: '#999' }}>Хост:</span> {server.publicHost}</div>
                   <div><span style={{ color: '#999' }}>Порт:</span> {server.publicPort}</div>
@@ -275,6 +358,7 @@ const ServersPage = () => {
                   <div><span style={{ color: '#999' }}>Клиентов:</span> {(server as any).clientsCount ?? '?'}</div>
                   <div><span style={{ color: '#999' }}>Security:</span> {server.security}</div>
                 </div>
+                )}
 
                 {/* Прогресс синхронизации */}
                 {syncStatuses.has(server.id) && (() => {
@@ -301,26 +385,30 @@ const ServersPage = () => {
                 })()}
 
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <Button 
-                    icon={<SyncOutlined />} 
-                    loading={syncStatuses.has(server.id) && syncStatuses.get(server.id)?.status === 'in-progress'} 
-                    disabled={syncStatuses.has(server.id)}
-                    onClick={() => handleSync(server.id)} 
-                    style={{ flex: '1 1 auto' }}
-                  >
-                    {syncStatuses.has(server.id) ? 'Синхр...' : 'Синхр.'}
-                  </Button>
-                  <Button 
-                    icon={<ClearOutlined />} 
-                    onClick={() => handleDeleteExpiredClients(server.id, server.name)}
-                    style={{ flex: '1 1 auto' }}
-                  >
-                    Очистить
-                  </Button>
+                  {!isSep && (
+                    <>
+                      <Button 
+                        icon={<SyncOutlined />} 
+                        loading={syncStatuses.has(server.id) && syncStatuses.get(server.id)?.status === 'in-progress'} 
+                        disabled={syncStatuses.has(server.id)}
+                        onClick={() => handleSync(server.id)} 
+                        style={{ flex: '1 1 auto' }}
+                      >
+                        {syncStatuses.has(server.id) ? 'Синхр...' : 'Синхр.'}
+                      </Button>
+                      <Button 
+                        icon={<ClearOutlined />} 
+                        onClick={() => handleDeleteExpiredClients(server.id, server.name)}
+                        style={{ flex: '1 1 auto' }}
+                      >
+                        Очистить
+                      </Button>
+                    </>
+                  )}
                   <Button icon={<EditOutlined />} onClick={() => handleEdit(server)} />
                   <Button danger icon={<DeleteOutlined />} onClick={() => {
                     Modal.confirm({
-                      title: 'Удалить сервер?',
+                      title: `Удалить ${isSep ? 'сепаратор' : 'сервер'}?`,
                       okText: 'Удалить',
                       cancelText: 'Отмена',
                       onOk: () => handleDelete(server.id),
@@ -328,7 +416,8 @@ const ServersPage = () => {
                   }} />
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>
@@ -373,6 +462,22 @@ const ServersPage = () => {
               <Input placeholder="Germany-1" />
             </Form.Item>
 
+            <Form.Item name="isSeparator" valuePropName="checked">
+              <Checkbox onChange={(e) => setIsSeparator(e.target.checked)}>
+                Это сепаратор (текстовая метка без подключения)
+              </Checkbox>
+            </Form.Item>
+
+            {isSeparator && (
+              <Form.Item name="separatorText" label="Текст сепаратора" rules={[{ required: isSeparator }]}>
+                <Input placeholder="⬇️ Сначала пробуем эти ⬇️" />
+              </Form.Item>
+            )}
+
+            <Form.Item name="displayOrder" label="Порядок отображения" tooltip="Меньше значение = выше в списке">
+              <InputNumber min={0} style={{ width: '100%' }} />
+            </Form.Item>
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <Form.Item name="serverPoolId" label="Пул">
                 <Select placeholder="Пул" allowClear>
@@ -387,9 +492,13 @@ const ServersPage = () => {
               </Form.Item>
             </div>
 
-            <Form.Item name="apiUrl" label="API URL" rules={[{ required: true }]}>
-              <Input placeholder="https://panel.example.com" />
-            </Form.Item>
+            {!isSeparator && (
+              <>
+                <Divider orientation="left" style={{ fontSize: 14 }}>Настройки подключения</Divider>
+
+                <Form.Item name="apiUrl" label="API URL" rules={[{ required: !isSeparator }]}>
+                  <Input placeholder="https://panel.example.com" />
+                </Form.Item>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <Form.Item name="webBasePath" label="Web Path">
@@ -401,16 +510,16 @@ const ServersPage = () => {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <Form.Item name="username" label="Username" rules={[{ required: true }]}>
+              <Form.Item name="username" label="Username" rules={[{ required: !isSeparator }]}>
                 <Input />
               </Form.Item>
-              <Form.Item name="password" label="Password" rules={[{ required: true }]}>
+              <Form.Item name="password" label="Password" rules={[{ required: !isSeparator }]}>
                 <Input.Password />
               </Form.Item>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
-              <Form.Item name="publicHost" label="Публичный хост" rules={[{ required: true }]}>
+              <Form.Item name="publicHost" label="Публичный хост" rules={[{ required: !isSeparator }]}>
                 <Input placeholder="vpn.example.com" />
               </Form.Item>
               <Form.Item name="publicPort" label="Порт">
@@ -431,15 +540,15 @@ const ServersPage = () => {
               </Form.Item>
             </div>
 
-            <Form.Item name="pbk" label="Public Key (PBK)" rules={[{ required: true }]}>
+            <Form.Item name="pbk" label="Public Key (PBK)" rules={[{ required: !isSeparator }]}>
               <Input />
             </Form.Item>
 
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
-              <Form.Item name="sni" label="SNI" rules={[{ required: true }]}>
+              <Form.Item name="sni" label="SNI" rules={[{ required: !isSeparator }]}>
                 <Input />
               </Form.Item>
-              <Form.Item name="sid" label="Short ID" rules={[{ required: true }]}>
+              <Form.Item name="sid" label="Short ID" rules={[{ required: !isSeparator }]}>
                 <Input />
               </Form.Item>
             </div>
@@ -459,6 +568,8 @@ const ServersPage = () => {
                 <Input />
               </Form.Item>
             </div>
+              </>
+            )}
           </Form>
         </div>
       </Modal>
