@@ -140,6 +140,31 @@ export interface SendMessageResponse {
   message?: string; // Для массовой рассылки в фоне
 }
 
+export interface SendTelegramMessageDto {
+  telegramId: string;
+  message: string;
+}
+
+export interface PaymentSession {
+  id: string;
+  invId: string;
+  telegramId: string;
+  status: 'pending' | 'paid' | 'failed' | 'expired';
+  period: number;
+  amount: number;
+  createdAt: string;
+  expiresAt: string | null;
+}
+
+export interface GetPaidSessionsParams {
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface GetRandomPaidSessionsParams extends GetPaidSessionsParams {
+  count: number;
+}
+
 // API methods
 export const subscriptionsAPI = {
   getAll: (params?: { search?: string; source?: string }) => 
@@ -173,6 +198,15 @@ export const serversAPI = {
   clearSyncStatus: (id: number) => api.delete(`/server-pools/servers/${id}/sync-status`),
   migrateEmails: (id: number) => api.post<{ total: number; updated: number; failed: number; errors: string[] }>(`/server-pools/servers/${id}/migrate-emails`),
   deleteExpiredClients: (id: number) => api.post<{ serversProcessed: number; clientsRemoved: number; errors: string[] }>(`/server-pools/servers/${id}/delete-expired-clients`),
+};
+
+export const paymentsAPI = {
+  getPaidSessions: (params?: GetPaidSessionsParams) => 
+    api.get<PaymentSession[]>('/payment/paid-sessions', { params }),
+  getRandomPaidSessions: (params: GetRandomPaidSessionsParams) => 
+    api.get<PaymentSession[]>('/payment/paid-sessions/random', { params }),
+  sendTelegramMessage: (data: SendTelegramMessageDto) => 
+    api.post<{ success: boolean; message: string }>('/payment/send-telegram-message', data),
 };
 
 export default api;

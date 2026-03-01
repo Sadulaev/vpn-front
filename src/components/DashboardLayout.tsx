@@ -6,6 +6,7 @@ import {
   DatabaseOutlined,
   ClusterOutlined,
   MessageOutlined,
+  DollarOutlined,
   LogoutOutlined,
   MenuOutlined,
 } from '@ant-design/icons';
@@ -29,6 +30,7 @@ const DashboardLayout = () => {
     { key: '/pools', icon: <DatabaseOutlined />, label: 'Пулы' },
     { key: '/servers', icon: <ClusterOutlined />, label: 'Серверы' },
     { key: '/messages', icon: <MessageOutlined />, label: 'Рассылка' },
+    { key: '/payments', icon: <DollarOutlined />, label: 'Платежи' },
   ];
 
   const handleLogout = () => {

@@ -7,6 +7,7 @@ import ServersPage from './pages/ServersPage';
 import PoolsPage from './pages/PoolsPage';
 import SubscriptionsPage from './pages/SubscriptionsPage';
 import MessagesPage from './pages/MessagesPage';
+import PaymentsPage from './pages/PaymentsPage';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
             <Route path="servers" element={<ServersPage />} />
             <Route path="pools" element={<PoolsPage />} />
             <Route path="messages" element={<MessagesPage />} />
+            <Route path="payments" element={<PaymentsPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
