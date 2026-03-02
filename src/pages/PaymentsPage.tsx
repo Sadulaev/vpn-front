@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Button, DatePicker, message, Tag, InputNumber, Modal, Input } from 'antd';
+import { Button, DatePicker, message, Tag, InputNumber, Modal, Input, Pagination } from 'antd';
 import { SearchOutlined, ReloadOutlined, SwapOutlined, SendOutlined } from '@ant-design/icons';
 import { paymentsAPI, PaymentSession } from '../services/api';
 import dayjs from 'dayjs';
@@ -14,22 +14,30 @@ const PaymentsPage = () => {
   const [messageModalVisible, setMessageModalVisible] = useState(false);
   const [selectedSession, setSelectedSession] = useState<PaymentSession | null>(null);
   const [messageText, setMessageText] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [isRandomMode, setIsRandomMode] = useState(false);
 
   useEffect(() => {
-    fetchSessions();
-  }, []);
+    if (!isRandomMode) {
+      fetchSessions();
+    }
+  }, [page, pageSize]);
 
   const fetchSessions = async () => {
     setLoading(true);
+    setIsRandomMode(false);
     try {
-      const params: any = {};
+      const params: any = { page, limit: pageSize };
       if (dateRange && dateRange[0] && dateRange[1]) {
         params.dateFrom = dateRange[0].toISOString();
         params.dateTo = dateRange[1].toISOString();
       }
       const response = await paymentsAPI.getPaidSessions(params);
-      setSessions(response.data);
-      message.success(`Загружено ${response.data.length} оплаченных платежей`);
+      setSessions(response.data.data);
+      setTotal(response.data.total);
+      message.success(`Загружено ${response.data.data.length} из ${response.data.total} оплаченных платежей`);
     } catch {
       message.error('Ошибка загрузки платежей');
     } finally {
@@ -44,6 +52,7 @@ const PaymentsPage = () => {
     }
 
     setLoading(true);
+    setIsRandomMode(true);
     try {
       const params: any = { count: randomCount };
       if (dateRange && dateRange[0] && dateRange[1]) {
@@ -52,6 +61,7 @@ const PaymentsPage = () => {
       }
       const response = await paymentsAPI.getRandomPaidSessions(params);
       setSessions(response.data);
+      setTotal(response.data.length);
       message.success(`Выбрано случайно ${response.data.length} из доступных платежей`);
     } catch {
       message.error('Ошибка случайного отбора');
@@ -138,13 +148,18 @@ const PaymentsPage = () => {
           <Button icon={<SearchOutlined />} loading={loading} onClick={fetchSessions} type="primary">
             Поиск
           </Button>
-          <Button icon={<ReloadOutlined />} loading={loading} onClick={() => { setDateRange(null); fetchSessions(); }}>
+          <Button icon={<ReloadOutlined />} loading={loading} onClick={() => { 
+            setDateRange(null); 
+            setPage(1); 
+            setIsRandomMode(false);
+            fetchSessions(); 
+          }}>
             Сбросить
           </Button>
         </div>
 
         {/* Random selection */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
           <span>Случайный отбор:</span>
           <InputNumber
             min={1}
@@ -156,8 +171,28 @@ const PaymentsPage = () => {
           <Button icon={<SwapOutlined />} loading={loading} onClick={handleRandomSelection}>
             Выбрать случайно
           </Button>
-          <Tag color="blue">{sessions.length} записей</Tag>
         </div>
+
+        {/* Пагинация только для обычного режима */}
+        {!isRandomMode && total > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <Pagination
+              current={page}
+              pageSize={pageSize}
+              total={total}
+              onChange={(newPage, newPageSize) => {
+                setPage(newPage);
+                if (newPageSize !== pageSize) {
+                  setPageSize(newPageSize);
+                  setPage(1);
+                }
+              }}
+              showSizeChanger
+              showTotal={(total) => `Всего ${total} записей`}
+              pageSizeOptions={[10, 20, 50, 100]}
+            />
+          </div>
+        )}
       </div>
 
       {/* Sessions list */}
@@ -201,6 +236,27 @@ const PaymentsPage = () => {
       {sessions.length === 0 && !loading && (
         <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>
           Нет данных. Используйте фильтры для поиска платежей.
+        </div>
+      )}
+
+      {/* Пагинация внизу для обычного режима */}
+      {!isRandomMode && total > 0 && sessions.length > 0 && (
+        <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center' }}>
+          <Pagination
+            current={page}
+            pageSize={pageSize}
+            total={total}
+            onChange={(newPage, newPageSize) => {
+              setPage(newPage);
+              if (newPageSize !== pageSize) {
+                setPageSize(newPageSize);
+                setPage(1);
+              }
+            }}
+            showSizeChanger
+            showTotal={(total) => `Всего ${total} записей`}
+            pageSizeOptions={[10, 20, 50, 100]}
+          />
         </div>
       )}
 

@@ -9,6 +9,34 @@ const api = axios.create({
   },
 });
 
+// Request interceptor для добавления JWT токена
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor для обработки 401 ошибок
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Удаляем токен и перенаправляем на логин
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('isAuthenticated');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Types
 export interface Subscription {
   id: string;
@@ -159,13 +187,36 @@ export interface PaymentSession {
 export interface GetPaidSessionsParams {
   dateFrom?: string;
   dateTo?: string;
+  page?: number;
+  limit?: number;
 }
 
 export interface GetRandomPaidSessionsParams extends GetPaidSessionsParams {
   count: number;
 }
 
+export interface PaginatedPaymentSessions {
+  data: PaymentSession[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface LoginDto {
+  username: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  expires_in: number;
+}
+
 // API methods
+export const authAPI = {
+  login: (data: LoginDto) => api.post<AuthResponse>('/auth/login', data),
+};
+
 export const subscriptionsAPI = {
   getAll: (params?: { search?: string; source?: string }) => 
     api.get<Subscription[]>('/subscriptions', { params }),
@@ -202,7 +253,7 @@ export const serversAPI = {
 
 export const paymentsAPI = {
   getPaidSessions: (params?: GetPaidSessionsParams) => 
-    api.get<PaymentSession[]>('/payment/paid-sessions', { params }),
+    api.get<PaginatedPaymentSessions>('/payment/paid-sessions', { params }),
   getRandomPaidSessions: (params: GetRandomPaidSessionsParams) => 
     api.get<PaymentSession[]>('/payment/paid-sessions/random', { params }),
   sendTelegramMessage: (data: SendTelegramMessageDto) => 

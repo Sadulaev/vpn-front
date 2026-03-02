@@ -13,18 +13,21 @@ const LoginPage = () => {
     return <Navigate to="/" replace />;
   }
 
-  const onFinish = (values: { username: string; password: string }) => {
+  const onFinish = async (values: { username: string; password: string }) => {
     setLoading(true);
-    setTimeout(() => {
-      const success = login(values.username, values.password);
+    try {
+      const success = await login(values.username, values.password);
       if (success) {
         message.success('Вход выполнен');
         navigate('/');
       } else {
         message.error('Неверный логин или пароль');
       }
+    } catch (error) {
+      message.error('Ошибка при входе');
+    } finally {
       setLoading(false);
-    }, 300);
+    }
   };
 
   return (
