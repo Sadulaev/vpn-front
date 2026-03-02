@@ -224,9 +224,6 @@ const PaymentsPage = () => {
               <div><strong>Период:</strong> {session.period} мес.</div>
               <div><strong>Сумма:</strong> {session.amount} ₽</div>
               <div><strong>Создан:</strong> {dayjs(session.createdAt).format('DD.MM.YYYY HH:mm')}</div>
-              {session.expiresAt && (
-                <div><strong>Истекает:</strong> {dayjs(session.expiresAt).format('DD.MM.YYYY HH:mm')}</div>
-              )}
             </div>
           </div>
         ))}
