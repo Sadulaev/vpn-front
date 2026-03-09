@@ -6,7 +6,8 @@ export default defineConfig({
   server: {
     port: 3001,
     allowedHosts: [
-      'sub.hyper-vpn.ru'
+      'api.kavkaz-market.tech',
+      'auth.kavkaz-market.tech',
     ],
     proxy: {
       '/api': {
