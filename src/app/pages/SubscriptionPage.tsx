@@ -4,13 +4,13 @@ import { miniappAPI, SubscriptionItem, SubscriptionPlan } from '../../services/m
 const BYTES_IN_GB = 1024 * 1024 * 1024;
 
 function formatBytes(bytes: number | null | undefined): string {
-  if (bytes == null) return 'вЂ”';
+  if (bytes == null) return '—';
   const gb = bytes / BYTES_IN_GB;
   return gb >= 1 ? `${gb.toFixed(2)} GB` : `${(bytes / 1024 / 1024).toFixed(0)} MB`;
 }
 
 function formatExpire(expire: number | null | undefined): string {
-  if (!expire) return 'Р‘РµСЃСЃСЂРѕС‡РЅРѕ';
+  if (!expire) return 'Бессрочно';
   const date = new Date(expire * 1000);
   return date.toLocaleDateString('ru-RU', { day: '2-digit', month: 'long', year: 'numeric' });
 }
@@ -23,11 +23,11 @@ function daysUntil(expire: number | null | undefined): number | null {
 
 function statusLabel(status: string | undefined | null): { text: string; color: string } {
   switch (status) {
-    case 'active': return { text: 'РђРєС‚РёРІРЅР°', color: '#4caf50' };
-    case 'disabled': return { text: 'РћС‚РєР»СЋС‡РµРЅР°', color: '#f44336' };
-    case 'expired': return { text: 'РСЃС‚РµРєР»Р°', color: '#ff9800' };
-    case 'limited': return { text: 'Р›РёРјРёС‚ С‚СЂР°С„РёРєР°', color: '#ff5722' };
-    default: return { text: status ?? 'вЂ”', color: '#9e9e9e' };
+    case 'active': return { text: 'Активна', color: '#4caf50' };
+    case 'disabled': return { text: 'Отключена', color: '#f44336' };
+    case 'expired': return { text: 'Истекла', color: '#ff9800' };
+    case 'limited': return { text: 'Лимит трафика', color: '#ff5722' };
+    default: return { text: status ?? '—', color: '#9e9e9e' };
   }
 }
 
@@ -73,7 +73,6 @@ const s: Record<string, React.CSSProperties> = {
     backgroundColor: 'var(--tg-theme-secondary-bg-color, #232e3c)',
     borderRadius: '12px', padding: '32px 16px', textAlign: 'center',
   },
-  // Payment modal
   overlay: {
     position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)',
     display: 'flex', alignItems: 'flex-end', zIndex: 200,
@@ -94,16 +93,13 @@ const s: Record<string, React.CSSProperties> = {
   planPrice: { fontSize: '15px', fontWeight: 700, color: 'var(--tg-theme-button-color, #2ea6ff)' },
 };
 
-// в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-// Payment bottom sheet
-// в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 function PaymentSheet({
   plans,
   subscriptionId,
   onClose,
 }: {
   plans: SubscriptionPlan[];
-  subscriptionId?: string; // undefined = new subscription
+  subscriptionId?: string;
   onClose: () => void;
 }) {
   const [loading, setLoading] = useState(false);
@@ -114,7 +110,6 @@ function PaymentSheet({
     setError(null);
     try {
       const { paymentUrl } = await miniappAPI.createPayment(plan.months, subscriptionId);
-      // Open Robokassa in external browser
       if (window.Telegram?.WebApp?.openLink) {
         window.Telegram.WebApp.openLink(paymentUrl);
       } else {
@@ -122,7 +117,7 @@ function PaymentSheet({
       }
       onClose();
     } catch {
-      setError('РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕР·РґР°С‚СЊ РїР»Р°С‚С‘Р¶. РџРѕРїСЂРѕР±СѓР№С‚Рµ РїРѕР·Р¶Рµ.');
+      setError('Не удалось создать платёж. Попробуйте позже.');
     } finally {
       setLoading(false);
     }
@@ -132,7 +127,7 @@ function PaymentSheet({
     <div style={s.overlay} onClick={onClose}>
       <div style={s.sheet} onClick={(e) => e.stopPropagation()}>
         <div style={s.sheetTitle}>
-          {subscriptionId ? 'РџСЂРѕРґР»РёС‚СЊ РїРѕРґРїРёСЃРєСѓ' : 'РќРѕРІР°СЏ РїРѕРґРїРёСЃРєР°'}
+          {subscriptionId ? 'Продлить подписку' : 'Новая подписка'}
         </div>
         {error && <div style={{ color: '#f44336', fontSize: '13px' }}>{error}</div>}
         <div style={s.planGrid}>
@@ -149,21 +144,18 @@ function PaymentSheet({
               }}
             >
               <span style={s.planLabel}>{plan.label}</span>
-              <span style={s.planPrice}>{plan.price} в‚Ѕ</span>
+              <span style={s.planPrice}>{plan.price} ₽</span>
             </button>
           ))}
         </div>
         <button style={{ ...s.btn, ...s.btnGhost, width: '100%' }} onClick={onClose}>
-          РћС‚РјРµРЅР°
+          Отмена
         </button>
       </div>
     </div>
   );
 }
 
-// в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-// Single subscription card
-// в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 function SubscriptionCard({
   sub,
   index,
@@ -210,7 +202,7 @@ function SubscriptionCard({
     <>
       <div style={s.card}>
         <div style={s.cardHeader}>
-          <span style={s.cardTitle}>РџРѕРґРїРёСЃРєР° #{index + 1}</span>
+          <span style={s.cardTitle}>Подписка #{index + 1}</span>
           <span style={{ ...s.statusBadge, backgroundColor: statusColor + '22', color: statusColor }}>
             {statusText}
           </span>
@@ -219,21 +211,21 @@ function SubscriptionCard({
         <div style={s.divider} />
 
         <div style={s.row}>
-          <span style={s.label}>РСЃС‚РµРєР°РµС‚</span>
+          <span style={s.label}>Истекает</span>
           <span style={s.value}>
             {formatExpire(sub.expire)}
             {days != null && (
               <span style={{ color: days <= 3 ? '#f44336' : 'var(--tg-theme-hint-color,#7c8a94)', fontSize: '11px', marginLeft: '6px' }}>
-                ({days} РґРЅ.)
+                ({days} дн.)
               </span>
             )}
           </span>
         </div>
 
         <div style={s.row}>
-          <span style={s.label}>РўСЂР°С„РёРє</span>
+          <span style={s.label}>Трафик</span>
           <span style={s.value}>
-            {formatBytes(sub.usedTraffic)} / {limitGb ? `${limitGb.toFixed(0)} GB` : 'в€ћ'}
+            {formatBytes(sub.usedTraffic)} / {limitGb ? `${limitGb.toFixed(0)} GB` : '∞'}
           </span>
         </div>
 
@@ -250,11 +242,11 @@ function SubscriptionCard({
         {sub.subscriptionUrl && (
           <>
             <div style={s.divider} />
-            <div style={{ fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>РЎСЃС‹Р»РєР° РЅР° РїРѕРґРїРёСЃРєСѓ</div>
+            <div style={{ fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Ссылка на подписку</div>
             <div style={s.urlRow}>
               <span style={s.urlText}>{sub.subscriptionUrl}</span>
               <button style={{ ...s.btn, ...s.btnPrimary }} onClick={handleCopy}>
-                {copied ? 'вњ“' : 'РљРѕРїРёСЂРѕРІР°С‚СЊ'}
+                {copied ? '✓' : 'Копировать'}
               </button>
             </div>
           </>
@@ -267,19 +259,19 @@ function SubscriptionCard({
             style={{ ...s.btn, ...s.btnPrimary, flex: 1 }}
             onClick={() => setShowPayment(true)}
           >
-            рџ’і РџСЂРѕРґР»РёС‚СЊ
+            Продлить
           </button>
           <button
             disabled={deleting}
             style={{ ...s.btn, ...s.btnDanger, opacity: deleting ? 0.6 : 1 }}
             onClick={handleDelete}
           >
-            {confirmDelete ? 'РџРѕРґС‚РІРµСЂРґРёС‚СЊ СѓРґР°Р»РµРЅРёРµ' : 'рџ—‘ РЈРґР°Р»РёС‚СЊ'}
+            {confirmDelete ? 'Подтвердить удаление' : 'Удалить'}
           </button>
         </div>
         {confirmDelete && !deleting && (
           <button style={{ ...s.btn, ...s.btnGhost, textAlign: 'center' }} onClick={() => setConfirmDelete(false)}>
-            РћС‚РјРµРЅР°
+            Отмена
           </button>
         )}
       </div>
@@ -295,9 +287,6 @@ function SubscriptionCard({
   );
 }
 
-// в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-// Main page
-// в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 export default function SubscriptionPage() {
   const [subs, setSubs] = useState<SubscriptionItem[] | null>(null);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
@@ -314,7 +303,7 @@ export default function SubscriptionPage() {
         setSubs(subsData);
         setPlans(plansData);
       })
-      .catch((e) => setError(e?.response?.data?.message ?? 'РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё РґР°РЅРЅС‹С…'));
+      .catch((e: any) => setError(e?.response?.data?.message ?? 'Ошибка загрузки данных'));
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -326,8 +315,8 @@ export default function SubscriptionPage() {
   if (error) {
     return (
       <div style={s.page}>
-        <div style={{ ...s.emptyCard }}>
-          <div style={{ fontSize: '48px', marginBottom: '12px' }}>вљ пёЏ</div>
+        <div style={s.emptyCard}>
+          <div style={{ fontSize: '48px', marginBottom: '12px' }}>⚠️</div>
           <div style={{ color: '#f44336', fontSize: '14px' }}>{error}</div>
         </div>
       </div>
@@ -337,20 +326,20 @@ export default function SubscriptionPage() {
   if (!subs) {
     return (
       <div style={{ ...s.page, alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-        <div style={{ fontSize: '16px', color: 'var(--tg-theme-hint-color, #7c8a94)' }}>Р—Р°РіСЂСѓР·РєР°вЂ¦</div>
+        <div style={{ fontSize: '16px', color: 'var(--tg-theme-hint-color, #7c8a94)' }}>Загрузка…</div>
       </div>
     );
   }
 
   return (
     <div style={s.page}>
-      <h1 style={s.heading}>РњРѕРё РїРѕРґРїРёСЃРєРё</h1>
+      <h1 style={s.heading}>Мои подписки</h1>
 
       {subs.length === 0 && (
         <div style={s.emptyCard}>
-          <div style={{ fontSize: '48px', marginBottom: '12px' }}>рџ“­</div>
+          <div style={{ fontSize: '48px', marginBottom: '12px' }}>📭</div>
           <div style={{ fontSize: '14px', color: 'var(--tg-theme-hint-color, #7c8a94)' }}>
-            РЈ РІР°СЃ РїРѕРєР° РЅРµС‚ РїРѕРґРїРёСЃРѕРє.<br />РћС„РѕСЂРјРёС‚Рµ РїРµСЂРІСѓСЋ РЅРёР¶Рµ.
+            У вас пока нет подписок.<br />Оформите первую ниже.
           </div>
         </div>
       )}
@@ -367,7 +356,7 @@ export default function SubscriptionPage() {
 
       {plans.length > 0 && (
         <button style={s.newSubBtn} onClick={() => setShowNewPayment(true)}>
-          вћ• РќРѕРІР°СЏ РїРѕРґРїРёСЃРєР°
+          + Новая подписка
         </button>
       )}
 
@@ -380,5 +369,3 @@ export default function SubscriptionPage() {
     </div>
   );
 }
-
-

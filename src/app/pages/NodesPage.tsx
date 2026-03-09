@@ -4,10 +4,10 @@ import { miniappAPI, NodesResponse, NodeData } from '../../services/miniapp-api'
 type NodeStatus = NodeData['status'];
 
 const statusConfig: Record<NodeStatus, { label: string; color: string; dot: string }> = {
-  connected: { label: 'РџРѕРґРєР»СЋС‡С‘РЅ', color: '#4caf50', dot: 'рџџў' },
-  connecting: { label: 'РџРѕРґРєР»СЋС‡РµРЅРёРµвЂ¦', color: '#ff9800', dot: 'рџџЎ' },
-  error: { label: 'РћС€РёР±РєР°', color: '#f44336', dot: 'рџ”ґ' },
-  disabled: { label: 'РћС‚РєР»СЋС‡С‘РЅ', color: '#9e9e9e', dot: 'вљ«' },
+  connected: { label: 'Подключён', color: '#4caf50', dot: '🟢' },
+  connecting: { label: 'Подключение…', color: '#ff9800', dot: '🟡' },
+  error: { label: 'Ошибка', color: '#f44336', dot: '🔴' },
+  disabled: { label: 'Отключён', color: '#9e9e9e', dot: '⚫' },
 };
 
 const s: Record<string, React.CSSProperties> = {
@@ -44,13 +44,13 @@ export default function NodesPage() {
   useEffect(() => {
     miniappAPI.getNodes()
       .then(setData)
-      .catch((e) => setError(e?.response?.data?.message ?? 'РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё'));
+      .catch((e: any) => setError(e?.response?.data?.message ?? 'Ошибка загрузки'));
   }, []);
 
   if (error) {
     return (
       <div style={s.page}>
-        <h1 style={s.heading}>РЎРµСЂРІРµСЂС‹</h1>
+        <h1 style={s.heading}>Серверы</h1>
         <div style={{ ...s.nodeCard, justifyContent: 'center', color: '#f44336', padding: '32px' }}>{error}</div>
       </div>
     );
@@ -59,7 +59,7 @@ export default function NodesPage() {
   if (!data) {
     return (
       <div style={{ ...s.page, alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-        <div style={{ fontSize: '16px', color: 'var(--tg-theme-hint-color, #7c8a94)' }}>Р—Р°РіСЂСѓР·РєР°вЂ¦</div>
+        <div style={{ fontSize: '16px', color: 'var(--tg-theme-hint-color, #7c8a94)' }}>Загрузка…</div>
       </div>
     );
   }
@@ -69,30 +69,29 @@ export default function NodesPage() {
 
   return (
     <div style={s.page}>
-      <h1 style={s.heading}>РЎРµСЂРІРµСЂС‹</h1>
+      <h1 style={s.heading}>Серверы</h1>
 
-      {/* Stats row */}
       <div style={s.statsRow}>
         <div style={s.statCard}>
           <div style={s.statNum}>{connected}/{nodes.length}</div>
-          <div style={s.statLabel}>РќРѕРґ РѕРЅР»Р°Р№РЅ</div>
+          <div style={s.statLabel}>Нод онлайн</div>
         </div>
         {onlineUsers != null && (
           <div style={s.statCard}>
             <div style={{ ...s.statNum, color: '#4caf50' }}>{onlineUsers}</div>
-            <div style={s.statLabel}>РћРЅР»Р°Р№РЅ СЃРµР№С‡Р°СЃ</div>
+            <div style={s.statLabel}>Онлайн сейчас</div>
           </div>
         )}
         {activeUsers != null && (
           <div style={s.statCard}>
             <div style={s.statNum}>{activeUsers}</div>
-            <div style={s.statLabel}>РђРєС‚РёРІРЅС‹С…</div>
+            <div style={s.statLabel}>Активных</div>
           </div>
         )}
       </div>
 
-      {nodes.map((node) => {
-        const cfg = statusConfig[node.status] ?? { label: node.status, color: '#9e9e9e', dot: 'вљ«' };
+      {nodes.map((node: NodeData) => {
+        const cfg = statusConfig[node.status] ?? { label: node.status, color: '#9e9e9e', dot: '⚫' };
         return (
           <div key={node.id} style={s.nodeCard}>
             <span style={s.dot}>{cfg.dot}</span>
@@ -114,11 +113,9 @@ export default function NodesPage() {
 
       {nodes.length === 0 && (
         <div style={{ ...s.nodeCard, justifyContent: 'center', padding: '32px', color: 'var(--tg-theme-hint-color,#7c8a94)' }}>
-          РќРµС‚ РґРѕСЃС‚СѓРїРЅС‹С… СЃРµСЂРІРµСЂРѕРІ
+          Нет доступных серверов
         </div>
       )}
     </div>
   );
 }
-
-
