@@ -3,8 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Button, Drawer } from 'antd';
 import {
   FileTextOutlined,
-  DatabaseOutlined,
-  ClusterOutlined,
+  NodeIndexOutlined,
   MessageOutlined,
   DollarOutlined,
   LogoutOutlined,
@@ -27,8 +26,7 @@ const DashboardLayout = () => {
 
   const menuItems = [
     { key: '/subscriptions', icon: <FileTextOutlined />, label: 'Подписки' },
-    { key: '/pools', icon: <DatabaseOutlined />, label: 'Пулы' },
-    { key: '/servers', icon: <ClusterOutlined />, label: 'Серверы' },
+    { key: '/marzban', icon: <NodeIndexOutlined />, label: 'Marzban' },
     { key: '/messages', icon: <MessageOutlined />, label: 'Рассылка' },
     { key: '/payments', icon: <DollarOutlined />, label: 'Платежи' },
   ];

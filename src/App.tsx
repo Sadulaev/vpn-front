@@ -3,8 +3,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import DashboardLayout from './components/DashboardLayout';
-import ServersPage from './pages/ServersPage';
-import PoolsPage from './pages/PoolsPage';
+import MarzbanPage from './pages/MarzbanPage';
 import SubscriptionsPage from './pages/SubscriptionsPage';
 import MessagesPage from './pages/MessagesPage';
 import PaymentsPage from './pages/PaymentsPage';
@@ -26,8 +25,9 @@ function App() {
           >
             <Route index element={<Navigate to="/subscriptions" replace />} />
             <Route path="subscriptions" element={<SubscriptionsPage />} />
-            <Route path="servers" element={<ServersPage />} />
-            <Route path="pools" element={<PoolsPage />} />
+            <Route path="servers" element={<MarzbanPage />} />
+            <Route path="pools" element={<MarzbanPage />} />
+            <Route path="marzban" element={<MarzbanPage />} />
             <Route path="messages" element={<MessagesPage />} />
             <Route path="payments" element={<PaymentsPage />} />
           </Route>

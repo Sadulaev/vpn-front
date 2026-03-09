@@ -100,16 +100,20 @@ const SubscriptionsPage = () => {
 
   const paginatedData = subscriptions.slice((page - 1) * pageSize, page * pageSize);
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | null) => {
     if (status === 'active') return '#52c41a';
-    if (status === 'expired') return '#ff4d4f';
+    if (status === 'expired' || status === 'limited') return '#ff4d4f';
+    if (status === 'disabled' || status === 'on_hold') return '#faad14';
     return '#999';
   };
 
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: string | null) => {
     if (status === 'active') return 'Активна';
     if (status === 'expired') return 'Истекла';
-    return status;
+    if (status === 'disabled') return 'Отключена';
+    if (status === 'limited') return 'Лимит трафика';
+    if (status === 'on_hold') return 'На паузе';
+    return 'Неизвестно';
   };
 
   return (
@@ -126,7 +130,7 @@ const SubscriptionsPage = () => {
         {/* Filters */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <Input
-            placeholder="Поиск по Client ID..."
+            placeholder="Поиск по username / telegramId..."
             prefix={<SearchOutlined style={{ color: '#bbb' }} />}
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
@@ -174,15 +178,15 @@ const SubscriptionsPage = () => {
                   <div>
                     <span style={{ color: '#999', fontSize: 12 }}>#{(page - 1) * pageSize + index + 1}</span>
                     <div style={{ fontWeight: 600, fontSize: 14, marginTop: 2 }}>
-                      {sub.clientId.slice(0, 12)}...
+                      {(sub.marzbanUsername ?? sub.id.replace(/-/g, '')).slice(0, 12)}...
                       <CopyOutlined
                         style={{ marginLeft: 8, color: '#667eea', cursor: 'pointer' }}
-                        onClick={() => copyToClipboard(sub.clientId)}
+                        onClick={() => copyToClipboard(sub.marzbanUsername ?? sub.id)}
                       />
                     </div>
                   </div>
-                  <Tag color={getStatusColor(sub.status)} style={{ margin: 0 }}>
-                    {getStatusText(sub.status)}
+                  <Tag color={getStatusColor(sub.marzbanStatus)} style={{ margin: 0 }}>
+                    {getStatusText(sub.marzbanStatus)}
                   </Tag>
                 </div>
 
@@ -193,8 +197,8 @@ const SubscriptionsPage = () => {
                   </div>
                   <div>
                     <span style={{ color: '#999' }}>До:</span>{' '}
-                    <strong style={{ color: dayjs(sub.endDate).isBefore(dayjs()) ? '#ff4d4f' : undefined }}>
-                      {dayjs(sub.endDate).format('DD.MM.YY')}
+                    <strong style={{ color: sub.marzbanExpire && sub.marzbanExpire * 1000 < Date.now() ? '#ff4d4f' : undefined }}>
+                      {sub.marzbanExpire ? dayjs.unix(sub.marzbanExpire).format('DD.MM.YY') : '—'}
                     </strong>
                   </div>
                   <div>
@@ -230,7 +234,7 @@ const SubscriptionsPage = () => {
                     onClick={() => {
                       Modal.confirm({
                         title: 'Удалить подписку?',
-                        content: 'Клиент будет удален со всех серверов',
+                        content: 'Пользователь будет удален из Marzban',
                         okText: 'Удалить',
                         cancelText: 'Отмена',
                         onOk: () => handleDelete(sub.id),
@@ -274,9 +278,6 @@ const SubscriptionsPage = () => {
          <Form.Item name="days" label="Период (дней)" rules={[{ required: true }]}>
             <InputNumber min={1} max={365} style={{ width: '100%' }} />
           </Form.Item>
-          <Form.Item name="deviceLimit" label="Лимит устройств" initialValue={3}>
-            <InputNumber min={1} max={10} style={{ width: '100%' }} />
-          </Form.Item>
           <Form.Item name="note" label="Примечание">
             <TextArea rows={2} maxLength={500} showCount />
           </Form.Item>
@@ -293,16 +294,20 @@ const SubscriptionsPage = () => {
         {creationResult && (
           <div>
             <div style={{ background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 8, padding: 12, marginBottom: 12 }}>
-              <div><strong>Client ID:</strong> {creationResult.subscription?.clientId}</div>
+              <div><strong>Marzban username:</strong> {creationResult.marzbanUsername}</div>
               <div><strong>До:</strong> {dayjs(creationResult.subscription?.endDate).format('DD.MM.YYYY')}</div>
             </div>
-            <div style={{ fontSize: 13 }}>
-              <div>Серверов: {creationResult.serversTotal}</div>
-              <div style={{ color: '#52c41a' }}>Успешно: {creationResult.serversSuccess}</div>
-              {creationResult.serversFailed > 0 && (
-                <div style={{ color: '#ff4d4f' }}>Ошибок: {creationResult.serversFailed}</div>
-              )}
-            </div>
+            {creationResult.subscriptionUrl && (
+              <div style={{ marginTop: 8, fontSize: 13 }}>
+                <div style={{ marginBottom: 4 }}><strong>URL подписки:</strong></div>
+                <div
+                  style={{ fontFamily: 'monospace', fontSize: 11, wordBreak: 'break-all', background: '#f5f5f5', padding: 8, borderRadius: 6, cursor: 'pointer' }}
+                  onClick={() => { navigator.clipboard.writeText(creationResult.subscriptionUrl); message.success('URL скопирован'); }}
+                >
+                  {creationResult.subscriptionUrl}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </Modal>
