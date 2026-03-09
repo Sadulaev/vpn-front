@@ -16,17 +16,17 @@ miniappClient.interceptors.request.use((config) => {
   return config;
 });
 
-export interface SubscriptionData {
-  hasSubscription: boolean;
-  id?: number;
-  marzbanUsername?: string;
-  status?: string;
-  expire?: number | null;
-  subscriptionUrl?: string | null;
-  usedTraffic?: number | null;
-  dataLimit?: number;
-  days?: number;
-  startDate?: string | null;
+export interface SubscriptionItem {
+  id: string;
+  marzbanUsername: string | null;
+  status: string | null;
+  expire: number | null;
+  subscriptionUrl: string | null;
+  usedTraffic: number | null;
+  dataLimit: number;
+  days: number;
+  startDate: string | null;
+  createdAt: string;
 }
 
 export interface NodeData {
@@ -38,10 +38,39 @@ export interface NodeData {
   xrayVersion: string | null;
 }
 
-export const miniappAPI = {
-  getMe: (): Promise<SubscriptionData> =>
-    miniappClient.get<SubscriptionData>('/miniapp/me').then((r) => r.data),
+export interface NodesResponse {
+  nodes: NodeData[];
+  onlineUsers: number | null;
+  totalUsers: number | null;
+  activeUsers: number | null;
+}
 
-  getNodes: (): Promise<NodeData[]> =>
-    miniappClient.get<NodeData[]>('/miniapp/nodes').then((r) => r.data),
+export interface SubscriptionPlan {
+  months: number;
+  price: number;
+  label: string;
+}
+
+export interface PaymentLinkResponse {
+  paymentUrl: string;
+  invId: string;
+}
+
+export const miniappAPI = {
+  getSubscriptions: (): Promise<SubscriptionItem[]> =>
+    miniappClient.get<SubscriptionItem[]>('/miniapp/subscriptions').then((r) => r.data),
+
+  deleteSubscription: (id: string): Promise<void> =>
+    miniappClient.delete(`/miniapp/subscriptions/${id}`).then(() => undefined),
+
+  createPayment: (period: number, subscriptionId?: string): Promise<PaymentLinkResponse> =>
+    miniappClient
+      .post<PaymentLinkResponse>('/miniapp/pay', { period, subscriptionId })
+      .then((r) => r.data),
+
+  getPlans: (): Promise<SubscriptionPlan[]> =>
+    miniappClient.get<SubscriptionPlan[]>('/miniapp/plans').then((r) => r.data),
+
+  getNodes: (): Promise<NodesResponse> =>
+    miniappClient.get<NodesResponse>('/miniapp/nodes').then((r) => r.data),
 };

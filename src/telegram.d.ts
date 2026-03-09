@@ -41,6 +41,8 @@ interface TelegramWebApp {
   ready(): void;
   expand(): void;
   close(): void;
+  openLink(url: string, options?: { try_instant_view?: boolean }): void;
+  openTelegramLink(url: string): void;
   showAlert(message: string, callback?: () => void): void;
   showConfirm(message: string, callback?: (confirmed: boolean) => void): void;
   MainButton: {
