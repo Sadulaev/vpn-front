@@ -1,6 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom';
-
-const isTelegram = !!window.Telegram?.WebApp?.initData;
+import { useState, useEffect } from 'react';
 
 const styles: Record<string, React.CSSProperties> = {
   wrapper: {
@@ -49,6 +48,33 @@ const styles: Record<string, React.CSSProperties> = {
 };
 
 export default function AppLayout() {
+  const [isTelegram, setIsTelegram] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const init = () => {
+      const twa = window.Telegram?.WebApp;
+      if (twa) {
+        twa.ready();
+        twa.expand();
+        setIsTelegram(!!twa.initData);
+      } else {
+        setIsTelegram(false);
+      }
+    };
+
+    if (window.Telegram?.WebApp) {
+      init();
+    } else {
+      const timer = setTimeout(init, 300);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  if (isTelegram === null) {
+    // Ещё загружается
+    return <div style={styles.wrapper} />;
+  }
+
   if (!isTelegram) {
     return (
       <div style={{ ...styles.wrapper, alignItems: 'center', justifyContent: 'center' }}>
