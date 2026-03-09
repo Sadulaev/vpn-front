@@ -7,35 +7,49 @@ import MarzbanPage from './pages/MarzbanPage';
 import SubscriptionsPage from './pages/SubscriptionsPage';
 import MessagesPage from './pages/MessagesPage';
 import PaymentsPage from './pages/PaymentsPage';
+import AppLayout from './app/AppLayout';
+import SubscriptionPage from './app/pages/SubscriptionPage';
+import NodesPage from './app/pages/NodesPage';
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter basename="/admin">
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate to="/subscriptions" replace />} />
-            <Route path="subscriptions" element={<SubscriptionsPage />} />
-            <Route path="servers" element={<MarzbanPage />} />
-            <Route path="pools" element={<MarzbanPage />} />
-            <Route path="marzban" element={<MarzbanPage />} />
-            <Route path="messages" element={<MessagesPage />} />
-            <Route path="payments" element={<PaymentsPage />} />
-          </Route>
+    <BrowserRouter>
+      <Routes>
+        {/* Telegram Mini App */}
+        <Route path="/app" element={<AppLayout />}>
+          <Route index element={<SubscriptionPage />} />
+          <Route path="nodes" element={<NodesPage />} />
+        </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+        {/* Admin panel */}
+        <Route path="/admin/*" element={
+          <AuthProvider>
+            <Routes>
+              <Route path="login" element={<LoginPage />} />
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Navigate to="subscriptions" replace />} />
+                <Route path="subscriptions" element={<SubscriptionsPage />} />
+                <Route path="servers" element={<MarzbanPage />} />
+                <Route path="pools" element={<MarzbanPage />} />
+                <Route path="marzban" element={<MarzbanPage />} />
+                <Route path="messages" element={<MessagesPage />} />
+                <Route path="payments" element={<PaymentsPage />} />
+              </Route>
+              <Route path="*" element={<Navigate to="/admin" replace />} />
+            </Routes>
+          </AuthProvider>
+        } />
+
+        <Route path="*" element={<Navigate to="/admin" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

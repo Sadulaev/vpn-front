@@ -55,7 +55,7 @@ export default function AppLayout() {
 
       <nav style={styles.tabBar}>
         <NavLink
-          to="/"
+          to="/app"
           end
           style={({ isActive }) => ({
             ...styles.tabItem,
@@ -67,7 +67,7 @@ export default function AppLayout() {
         </NavLink>
 
         <NavLink
-          to="/nodes"
+          to="/app/nodes"
           style={({ isActive }) => ({
             ...styles.tabItem,
             ...(isActive ? styles.tabItemActive : {}),
