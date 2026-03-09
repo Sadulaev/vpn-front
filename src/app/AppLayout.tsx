@@ -1,5 +1,7 @@
 import { Outlet, NavLink } from 'react-router-dom';
 
+const isTelegram = !!window.Telegram?.WebApp?.initData;
+
 const styles: Record<string, React.CSSProperties> = {
   wrapper: {
     display: 'flex',
@@ -47,6 +49,20 @@ const styles: Record<string, React.CSSProperties> = {
 };
 
 export default function AppLayout() {
+  if (!isTelegram) {
+    return (
+      <div style={{ ...styles.wrapper, alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', padding: '32px' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📱</div>
+          <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>Telegram Mini App</div>
+          <div style={{ fontSize: '14px', color: 'var(--tg-theme-hint-color, #7c8a94)' }}>
+            Откройте это приложение через Telegram бота
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.wrapper}>
       <div style={styles.content}>
