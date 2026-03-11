@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button, Modal, Form, Input, InputNumber, message, Tag, Select, Empty, Spin, Pagination } from 'antd';
-import { PlusOutlined, CopyOutlined, LinkOutlined, DeleteOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import { PlusOutlined, CopyOutlined, LinkOutlined, DeleteOutlined, SearchOutlined, ReloadOutlined, DownloadOutlined } from '@ant-design/icons';
 import { subscriptionsAPI, Subscription } from '../services/api';
 import dayjs from 'dayjs';
 
@@ -70,6 +70,24 @@ const SubscriptionsPage = () => {
       message.error('Ошибка обработки');
     } finally {
       setProcessLoading(false);
+    }
+  };
+
+  const handleExportCsv = async () => {
+    try {
+      const params: any = {};
+      if (searchValue) params.search = searchValue;
+      if (sourceFilter) params.source = sourceFilter;
+      const response = await subscriptionsAPI.exportCsv(params);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `subscriptions-${dayjs().format('YYYY-MM-DD')}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      message.success('CSV файл скачан');
+    } catch {
+      message.error('Ошибка экспорта');
     }
   };
 
@@ -149,6 +167,9 @@ const SubscriptionsPage = () => {
           </Select>
           <Button icon={<ReloadOutlined />} loading={processLoading} onClick={handleProcessExpired}>
             Истёкшие
+          </Button>
+          <Button icon={<DownloadOutlined />} onClick={handleExportCsv}>
+            Экспорт CSV
           </Button>
         </div>
       </div>

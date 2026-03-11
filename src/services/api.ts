@@ -133,6 +133,8 @@ export const subscriptionsAPI = {
   getUrl: (id: string) => api.get<{ success: boolean; data: { subscriptionUrl: string } }>(`/subscriptions/${id}/url`),
   delete: (id: string) => api.post(`/subscriptions/${id}/delete`),
   sendMessage: (data: SendMessageDto) => api.post<SendMessageResponse>('/subscriptions/send-message', data),
+  exportCsv: (params?: { search?: string; source?: string }) =>
+    api.get('/subscriptions/export-csv', { params, responseType: 'blob' }),
 };
 
 export const paymentsAPI = {
@@ -142,6 +144,8 @@ export const paymentsAPI = {
     api.get<PaymentSession[]>('/payment/paid-sessions/random', { params }),
   sendTelegramMessage: (data: SendTelegramMessageDto) => 
     api.post<{ success: boolean; message: string }>('/payment/send-telegram-message', data),
+  exportCsv: (params?: { dateFrom?: string; dateTo?: string }) =>
+    api.get('/payment/export-csv', { params, responseType: 'blob' }),
 };
 
 export default api;

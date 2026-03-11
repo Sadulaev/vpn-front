@@ -1,4 +1,5 @@
 ﻿import { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { miniappAPI, SubscriptionItem, SubscriptionPlan } from '../../services/miniapp-api';
 
 const BYTES_IN_GB = 1024 * 1024 * 1024;
@@ -109,7 +110,7 @@ function PaymentSheet({
     setLoading(true);
     setError(null);
     try {
-      const { paymentUrl } = await miniappAPI.createPayment(plan.months, subscriptionId);
+      const { paymentUrl } = await miniappAPI.createPayment(plan.months, plan.price, subscriptionId);
       if (window.Telegram?.WebApp?.openLink) {
         window.Telegram.WebApp.openLink(paymentUrl);
       } else {
@@ -123,6 +124,41 @@ function PaymentSheet({
     }
   };
 
+  // Группируем планы по типу
+  const standardPlans = plans.filter(p => !p.planType || p.planType === 'standard');
+  const antiThrottlingPlans = plans.filter(p => p.planType === 'anti-throttling');
+
+  const renderPlanButton = (plan: SubscriptionPlan) => (
+    <button
+      key={`${plan.planType}-${plan.months}-${plan.dataLimitGB}`}
+      disabled={loading}
+      onClick={() => pay(plan)}
+      style={{
+        ...s.planRow,
+        backgroundColor: plan.planType === 'anti-throttling'
+          ? 'rgba(76, 175, 80, 0.1)'
+          : 'var(--tg-theme-secondary-bg-color, #232e3c)',
+        border: plan.planType === 'anti-throttling'
+          ? '1.5px solid rgba(76, 175, 80, 0.3)'
+          : '1.5px solid rgba(255,255,255,0.08)',
+        opacity: loading ? 0.6 : 1,
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        gap: '4px',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+        <span style={s.planLabel}>{plan.label}</span>
+        <span style={s.planPrice}>{plan.price} ₽</span>
+      </div>
+      {plan.description && (
+        <span style={{ fontSize: '11px', color: 'var(--tg-theme-hint-color, #7c8a94)' }}>
+          {plan.description}
+        </span>
+      )}
+    </button>
+  );
+
   return (
     <div style={s.overlay} onClick={onClose}>
       <div style={s.sheet} onClick={(e) => e.stopPropagation()}>
@@ -130,25 +166,26 @@ function PaymentSheet({
           {subscriptionId ? 'Продлить подписку' : 'Новая подписка'}
         </div>
         {error && <div style={{ color: '#f44336', fontSize: '13px' }}>{error}</div>}
-        <div style={s.planGrid}>
-          {plans.map((plan) => (
-            <button
-              key={plan.months}
-              disabled={loading}
-              onClick={() => pay(plan)}
-              style={{
-                ...s.planRow,
-                backgroundColor: 'var(--tg-theme-secondary-bg-color, #232e3c)',
-                border: '1.5px solid rgba(255,255,255,0.08)',
-                opacity: loading ? 0.6 : 1,
-              }}
-            >
-              <span style={s.planLabel}>{plan.label}</span>
-              <span style={s.planPrice}>{plan.price} ₽</span>
-            </button>
-          ))}
-        </div>
-        <button style={{ ...s.btn, ...s.btnGhost, width: '100%' }} onClick={onClose}>
+        
+        {standardPlans.length > 0 && (
+          <>
+            <div style={{ fontSize: '14px', fontWeight: 600, marginTop: '8px' }}>📱 Стандарт</div>
+            <div style={s.planGrid}>
+              {standardPlans.map(renderPlanButton)}
+            </div>
+          </>
+        )}
+        
+        {antiThrottlingPlans.length > 0 && (
+          <>
+            <div style={{ fontSize: '14px', fontWeight: 600, marginTop: '12px' }}>🔒 Антиглушилка</div>
+            <div style={s.planGrid}>
+              {antiThrottlingPlans.map(renderPlanButton)}
+            </div>
+          </>
+        )}
+        
+        <button style={{ ...s.btn, ...s.btnGhost, width: '100%', marginTop: '8px' }} onClick={onClose}>
           Отмена
         </button>
       </div>
@@ -158,12 +195,10 @@ function PaymentSheet({
 
 function SubscriptionCard({
   sub,
-  index,
   plans,
   onDelete,
 }: {
   sub: SubscriptionItem;
-  index: number;
   plans: SubscriptionPlan[];
   onDelete: (id: string) => void;
 }) {
@@ -177,6 +212,11 @@ function SubscriptionCard({
   const limitGb = sub.dataLimit ? sub.dataLimit / BYTES_IN_GB : null;
   const usedGb = sub.usedTraffic != null ? sub.usedTraffic / BYTES_IN_GB : null;
   const trafficPct = usedGb != null && limitGb ? Math.min(100, (usedGb / limitGb) * 100) : null;
+
+  // Определяем тип подписки по лимиту трафика
+  const isAntiThrottling = limitGb && limitGb > 0;
+  const subType = isAntiThrottling ? 'Антиглушилка' : 'Стандарт';
+  const subTypeIcon = isAntiThrottling ? '🔒' : '📱';
 
   const handleCopy = () => {
     if (!sub.subscriptionUrl) return;
@@ -202,7 +242,7 @@ function SubscriptionCard({
     <>
       <div style={s.card}>
         <div style={s.cardHeader}>
-          <span style={s.cardTitle}>Подписка #{index + 1}</span>
+          <span style={s.cardTitle}>{subTypeIcon} {subType}</span>
           <span style={{ ...s.statusBadge, backgroundColor: statusColor + '22', color: statusColor }}>
             {statusText}
           </span>
@@ -249,6 +289,37 @@ function SubscriptionCard({
                 {copied ? '✓' : 'Копировать'}
               </button>
             </div>
+
+            <div style={{ fontSize: '12px', fontWeight: 600, marginTop: '4px' }}>Добавить в приложение</div>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              <button
+                style={{ ...s.btn, ...s.btnGhost, fontSize: '12px', padding: '6px 10px' }}
+                onClick={() => {
+                  const encoded = encodeURIComponent(sub.subscriptionUrl!);
+                  window.location.href = `hiddify://import/${encoded}`;
+                }}
+              >
+                Hiddify / Happ
+              </button>
+              <button
+                style={{ ...s.btn, ...s.btnGhost, fontSize: '12px', padding: '6px 10px' }}
+                onClick={() => {
+                  const b64 = btoa(sub.subscriptionUrl!);
+                  window.location.href = `v2rayng://install-sub?url=${b64}`;
+                }}
+              >
+                v2rayNG
+              </button>
+              <button
+                style={{ ...s.btn, ...s.btnGhost, fontSize: '12px', padding: '6px 10px' }}
+                onClick={() => {
+                  const encoded = encodeURIComponent(sub.subscriptionUrl!);
+                  window.location.href = `streisand://import/${encoded}`;
+                }}
+              >
+                Streisand
+              </button>
+            </div>
           </>
         )}
 
@@ -292,6 +363,7 @@ export default function SubscriptionPage() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [showNewPayment, setShowNewPayment] = useState(false);
+  const navigate = useNavigate();
 
   const load = useCallback(() => {
     setError(null);
@@ -344,11 +416,10 @@ export default function SubscriptionPage() {
         </div>
       )}
 
-      {subs.map((sub, i) => (
+      {subs.map((sub) => (
         <SubscriptionCard
           key={sub.id}
           sub={sub}
-          index={i}
           plans={plans}
           onDelete={handleDelete}
         />
@@ -359,6 +430,17 @@ export default function SubscriptionPage() {
           + Новая подписка
         </button>
       )}
+
+      <button
+        style={{
+          ...s.newSubBtn,
+          backgroundColor: 'var(--tg-theme-secondary-bg-color, #232e3c)',
+          color: 'var(--tg-theme-text-color, #fff)',
+        }}
+        onClick={() => navigate('/app/instructions')}
+      >
+        📍 Инструкция по установке
+      </button>
 
       {showNewPayment && (
         <PaymentSheet

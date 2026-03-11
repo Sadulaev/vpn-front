@@ -49,6 +49,9 @@ export interface SubscriptionPlan {
   months: number;
   price: number;
   label: string;
+  dataLimitGB?: number;
+  planType?: 'standard' | 'anti-throttling';
+  description?: string;
 }
 
 export interface PaymentLinkResponse {
@@ -63,9 +66,9 @@ export const miniappAPI = {
   deleteSubscription: (id: string): Promise<void> =>
     miniappClient.delete(`/miniapp/subscriptions/${id}`).then(() => undefined),
 
-  createPayment: (period: number, subscriptionId?: string): Promise<PaymentLinkResponse> =>
+  createPayment: (period: number, price: number, subscriptionId?: string): Promise<PaymentLinkResponse> =>
     miniappClient
-      .post<PaymentLinkResponse>('/miniapp/pay', { period, subscriptionId })
+      .post<PaymentLinkResponse>('/miniapp/pay', { period, price, subscriptionId })
       .then((r) => r.data),
 
   getPlans: (): Promise<SubscriptionPlan[]> =>

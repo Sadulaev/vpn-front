@@ -118,6 +118,17 @@ export default function AppLayout() {
           <span style={styles.tabIcon}>🖥</span>
           <span>Серверы</span>
         </NavLink>
+
+        <NavLink
+          to="/app/instructions"
+          style={({ isActive }) => ({
+            ...styles.tabItem,
+            ...(isActive ? styles.tabItemActive : {}),
+          })}
+        >
+          <span style={styles.tabIcon}>📍</span>
+          <span>Инструкции</span>
+        </NavLink>
       </nav>
     </div>
   );

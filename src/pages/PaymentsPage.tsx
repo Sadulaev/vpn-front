@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button, DatePicker, message, Tag, InputNumber, Modal, Input, Pagination } from 'antd';
-import { SearchOutlined, ReloadOutlined, SwapOutlined, SendOutlined } from '@ant-design/icons';
+import { SearchOutlined, ReloadOutlined, SwapOutlined, SendOutlined, DownloadOutlined } from '@ant-design/icons';
 import { paymentsAPI, PaymentSession } from '../services/api';
 import dayjs from 'dayjs';
 
@@ -67,6 +67,26 @@ const PaymentsPage = () => {
       message.error('Ошибка случайного отбора');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExportCsv = async () => {
+    try {
+      const params: any = {};
+      if (dateRange && dateRange[0] && dateRange[1]) {
+        params.dateFrom = dateRange[0].toISOString();
+        params.dateTo = dateRange[1].toISOString();
+      }
+      const response = await paymentsAPI.exportCsv(params);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `payment-sessions-${dayjs().format('YYYY-MM-DD')}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      message.success('CSV файл скачан');
+    } catch {
+      message.error('Ошибка экспорта');
     }
   };
 
@@ -170,6 +190,9 @@ const PaymentsPage = () => {
           />
           <Button icon={<SwapOutlined />} loading={loading} onClick={handleRandomSelection}>
             Выбрать случайно
+          </Button>
+          <Button icon={<DownloadOutlined />} onClick={handleExportCsv}>
+            Экспорт CSV
           </Button>
         </div>
 

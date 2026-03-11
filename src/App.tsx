@@ -10,6 +10,7 @@ import PaymentsPage from './pages/PaymentsPage';
 import AppLayout from './app/AppLayout';
 import SubscriptionPage from './app/pages/SubscriptionPage';
 import NodesPage from './app/pages/NodesPage';
+import InstructionsPage from './app/pages/InstructionsPage';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/app" element={<AppLayout />}>
           <Route index element={<SubscriptionPage />} />
           <Route path="nodes" element={<NodesPage />} />
+          <Route path="instructions" element={<InstructionsPage />} />
         </Route>
 
         {/* Admin panel */}
