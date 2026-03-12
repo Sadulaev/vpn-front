@@ -25,15 +25,15 @@ const DashboardLayout = () => {
   }, []);
 
   const menuItems = [
-    { key: '/subscriptions', icon: <FileTextOutlined />, label: 'Подписки' },
-    { key: '/marzban', icon: <NodeIndexOutlined />, label: 'Marzban' },
-    { key: '/messages', icon: <MessageOutlined />, label: 'Рассылка' },
-    { key: '/payments', icon: <DollarOutlined />, label: 'Платежи' },
+    { key: '/admin/subscriptions', icon: <FileTextOutlined />, label: 'Подписки' },
+    { key: '/admin/marzban', icon: <NodeIndexOutlined />, label: 'Marzban' },
+    { key: '/admin/messages', icon: <MessageOutlined />, label: 'Рассылка' },
+    { key: '/admin/payments', icon: <DollarOutlined />, label: 'Платежи' },
   ];
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/admin/login');
   };
 
   const handleNav = (key: string) => {
