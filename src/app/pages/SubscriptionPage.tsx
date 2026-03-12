@@ -362,7 +362,7 @@ export function SubscriptionListPage({ subscriptionType = 'standard' }: { subscr
   useEffect(() => { load(); }, [load]);
 
   const subs = allSubs?.filter((sub) =>
-    isAnti ? (sub.dataLimit ?? 0) > 0 : (sub.dataLimit ?? 0) === 0
+    isAnti ? sub.isAntiThrottling : !sub.isAntiThrottling
   ) ?? null;
   const plans = allPlans.filter((p) =>
     isAnti ? p.planType === 'anti-throttling' : !p.planType || p.planType === 'standard'

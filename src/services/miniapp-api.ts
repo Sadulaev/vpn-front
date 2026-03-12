@@ -19,6 +19,7 @@ miniappClient.interceptors.request.use((config) => {
 export interface SubscriptionItem {
   id: string;
   marzbanUsername: string | null;
+  isAntiThrottling: boolean;
   status: string | null;
   expire: number | null;
   subscriptionUrl: string | null;
