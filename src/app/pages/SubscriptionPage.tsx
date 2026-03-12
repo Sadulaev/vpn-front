@@ -124,10 +124,6 @@ function PaymentSheet({
     }
   };
 
-  // Группируем планы по типу
-  const standardPlans = plans.filter(p => !p.planType || p.planType === 'standard');
-  const antiThrottlingPlans = plans.filter(p => p.planType === 'anti-throttling');
-
   const renderPlanButton = (plan: SubscriptionPlan) => (
     <button
       key={`${plan.planType}-${plan.months}-${plan.dataLimitGB}`}
@@ -166,25 +162,9 @@ function PaymentSheet({
           {subscriptionId ? 'Продлить подписку' : 'Новая подписка'}
         </div>
         {error && <div style={{ color: '#f44336', fontSize: '13px' }}>{error}</div>}
-        
-        {standardPlans.length > 0 && (
-          <>
-            <div style={{ fontSize: '14px', fontWeight: 600, marginTop: '8px' }}>📱 Стандарт</div>
-            <div style={s.planGrid}>
-              {standardPlans.map(renderPlanButton)}
-            </div>
-          </>
-        )}
-        
-        {antiThrottlingPlans.length > 0 && (
-          <>
-            <div style={{ fontSize: '14px', fontWeight: 600, marginTop: '12px' }}>🔒 Антиглушилка</div>
-            <div style={s.planGrid}>
-              {antiThrottlingPlans.map(renderPlanButton)}
-            </div>
-          </>
-        )}
-        
+        <div style={s.planGrid}>
+          {plans.map(renderPlanButton)}
+        </div>
         <button style={{ ...s.btn, ...s.btnGhost, width: '100%', marginTop: '8px' }} onClick={onClose}>
           Отмена
         </button>
@@ -358,9 +338,10 @@ function SubscriptionCard({
   );
 }
 
-export default function SubscriptionPage() {
-  const [subs, setSubs] = useState<SubscriptionItem[] | null>(null);
-  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+export function SubscriptionListPage({ subscriptionType = 'standard' }: { subscriptionType?: 'standard' | 'anti-throttling' }) {
+  const isAnti = subscriptionType === 'anti-throttling';
+  const [allSubs, setAllSubs] = useState<SubscriptionItem[] | null>(null);
+  const [allPlans, setAllPlans] = useState<SubscriptionPlan[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [showNewPayment, setShowNewPayment] = useState(false);
   const navigate = useNavigate();
@@ -372,16 +353,23 @@ export default function SubscriptionPage() {
       miniappAPI.getPlans(),
     ])
       .then(([subsData, plansData]) => {
-        setSubs(subsData);
-        setPlans(plansData);
+        setAllSubs(subsData);
+        setAllPlans(plansData);
       })
       .catch((e: any) => setError(e?.response?.data?.message ?? 'Ошибка загрузки данных'));
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
+  const subs = allSubs?.filter((sub) =>
+    isAnti ? (sub.dataLimit ?? 0) > 0 : (sub.dataLimit ?? 0) === 0
+  ) ?? null;
+  const plans = allPlans.filter((p) =>
+    isAnti ? p.planType === 'anti-throttling' : !p.planType || p.planType === 'standard'
+  );
+
   const handleDelete = (id: string) => {
-    setSubs((prev) => prev?.filter((s) => s.id !== id) ?? null);
+    setAllSubs((prev) => prev?.filter((s) => s.id !== id) ?? null);
   };
 
   if (error) {
@@ -405,13 +393,16 @@ export default function SubscriptionPage() {
 
   return (
     <div style={s.page}>
-      <h1 style={s.heading}>Мои подписки</h1>
+      <h1 style={s.heading}>{isAnti ? '🛡️ Антиглушилка' : '📶 Стандарт — безлимит'}</h1>
 
       {subs.length === 0 && (
         <div style={s.emptyCard}>
-          <div style={{ fontSize: '48px', marginBottom: '12px' }}>📭</div>
+          <div style={{ fontSize: '48px', marginBottom: '12px' }}>{isAnti ? '🛡️' : '📭'}</div>
           <div style={{ fontSize: '14px', color: 'var(--tg-theme-hint-color, #7c8a94)' }}>
-            У вас пока нет подписок.<br />Оформите первую ниже.
+            {isAnti
+              ? <>Нет подписок антиглушилки.<br />Оформите для обхода блокировок.</>
+              : <>У вас пока нет подписок.<br />Оформите первую ниже.</>
+            }
           </div>
         </div>
       )}
@@ -450,4 +441,8 @@ export default function SubscriptionPage() {
       )}
     </div>
   );
+}
+
+export default function SubscriptionPage() {
+  return <SubscriptionListPage subscriptionType="standard" />;
 }

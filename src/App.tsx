@@ -9,6 +9,7 @@ import MessagesPage from './pages/MessagesPage';
 import PaymentsPage from './pages/PaymentsPage';
 import AppLayout from './app/AppLayout';
 import SubscriptionPage from './app/pages/SubscriptionPage';
+import AntiThrottlingPage from './app/pages/AntiThrottlingPage';
 import NodesPage from './app/pages/NodesPage';
 import InstructionsPage from './app/pages/InstructionsPage';
 
@@ -19,6 +20,7 @@ function App() {
         {/* Telegram Mini App */}
         <Route path="/app" element={<AppLayout />}>
           <Route index element={<SubscriptionPage />} />
+          <Route path="anti" element={<AntiThrottlingPage />} />
           <Route path="nodes" element={<NodesPage />} />
           <Route path="instructions" element={<InstructionsPage />} />
         </Route>

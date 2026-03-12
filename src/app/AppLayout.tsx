@@ -104,8 +104,19 @@ export default function AppLayout() {
             ...(isActive ? styles.tabItemActive : {}),
           })}
         >
-          <span style={styles.tabIcon}>📱</span>
-          <span>Подписка</span>
+          <span style={styles.tabIcon}>�</span>
+          <span>Стандарт</span>
+        </NavLink>
+
+        <NavLink
+          to="/app/anti"
+          style={({ isActive }) => ({
+            ...styles.tabItem,
+            ...(isActive ? styles.tabItemActive : {}),
+          })}
+        >
+          <span style={styles.tabIcon}>🛡️</span>
+          <span>Антиглушилка</span>
         </NavLink>
 
         <NavLink
