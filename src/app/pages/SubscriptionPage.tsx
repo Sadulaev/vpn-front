@@ -112,12 +112,20 @@ function PaymentSheet({
   const pay = async (plan: SubscriptionPlan) => {
     setLoading(true);
     setError(null);
+    // iOS Safari блокирует window.open() после await — открываем окно синхронно,
+    // до запроса, затем задаём URL когда он будет готов.
+    const win = window.open('', '_blank');
     try {
       const name = subName.trim() || undefined;
       const { paymentUrl } = await miniappAPI.createPayment(plan.months, plan.price, subscriptionId, name);
-      window.open(paymentUrl, '_blank');
+      if (win) {
+        win.location.href = paymentUrl;
+      } else {
+        window.location.href = paymentUrl;
+      }
       onClose();
     } catch {
+      win?.close();
       setError('Не удалось создать платёж. Попробуйте позже.');
     } finally {
       setLoading(false);
