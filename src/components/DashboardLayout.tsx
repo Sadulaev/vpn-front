@@ -8,6 +8,7 @@ import {
   DollarOutlined,
   LogoutOutlined,
   MenuOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -29,6 +30,7 @@ const DashboardLayout = () => {
     { key: '/admin/marzban', icon: <NodeIndexOutlined />, label: 'Marzban' },
     { key: '/admin/messages', icon: <MessageOutlined />, label: 'Рассылка' },
     { key: '/admin/payments', icon: <DollarOutlined />, label: 'Платежи' },
+    { key: '/admin/settings', icon: <SettingOutlined />, label: 'Настройки' },
   ];
 
   const handleLogout = () => {

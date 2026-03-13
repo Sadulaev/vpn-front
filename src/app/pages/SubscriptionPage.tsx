@@ -201,10 +201,12 @@ function SubscriptionCard({
   sub,
   plans,
   onDelete,
+  canPurchase,
 }: {
   sub: SubscriptionItem;
   plans: SubscriptionPlan[];
   onDelete: (id: string) => void;
+  canPurchase: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
@@ -320,8 +322,9 @@ function SubscriptionCard({
 
         <div style={s.actions}>
           <button
-            style={{ ...s.btn, ...s.btnPrimary, flex: 1 }}
-            onClick={() => setShowPayment(true)}
+            disabled={!canPurchase}
+            style={{ ...s.btn, ...s.btnPrimary, flex: 1, opacity: canPurchase ? 1 : 0.4 }}
+            onClick={() => canPurchase && setShowPayment(true)}
           >
             Продлить
           </button>
@@ -355,6 +358,7 @@ export function SubscriptionListPage({ subscriptionType = 'standard' }: { subscr
   const isAnti = subscriptionType === 'anti-throttling';
   const [allSubs, setAllSubs] = useState<SubscriptionItem[] | null>(null);
   const [allPlans, setAllPlans] = useState<SubscriptionPlan[]>([]);
+  const [subscriptionsEnabled, setSubscriptionsEnabled] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showNewPayment, setShowNewPayment] = useState(false);
   const navigate = useNavigate();
@@ -364,10 +368,12 @@ export function SubscriptionListPage({ subscriptionType = 'standard' }: { subscr
     Promise.all([
       miniappAPI.getSubscriptions(),
       miniappAPI.getPlans(),
+      miniappAPI.getSettings(),
     ])
-      .then(([subsData, plansData]) => {
+      .then(([subsData, plansData, settings]) => {
         setAllSubs(subsData);
         setAllPlans(plansData);
+        setSubscriptionsEnabled(settings.subscriptionsEnabled);
       })
       .catch((e: any) => setError(e?.response?.data?.message ?? 'Ошибка загрузки данных'));
   }, []);
@@ -426,13 +432,27 @@ export function SubscriptionListPage({ subscriptionType = 'standard' }: { subscr
           sub={sub}
           plans={plans}
           onDelete={handleDelete}
+          canPurchase={subscriptionsEnabled}
         />
       ))}
 
       {plans.length > 0 && (
-        <button style={s.newSubBtn} onClick={() => setShowNewPayment(true)}>
-          + Новая подписка
-        </button>
+        subscriptionsEnabled ? (
+          <button style={s.newSubBtn} onClick={() => setShowNewPayment(true)}>
+            + Новая подписка
+          </button>
+        ) : (
+          <div style={{
+            ...s.emptyCard,
+            borderRadius: '12px',
+            border: '1px solid rgba(249,168,37,0.3)',
+            backgroundColor: 'rgba(249,168,37,0.08)',
+          }}>
+            <div style={{ fontSize: '28px', marginBottom: '8px' }}>🔒</div>
+            <div style={{ fontSize: '14px', color: '#f9a825', fontWeight: 600 }}>Продажа временно приостановлена</div>
+            <div style={{ fontSize: '12px', color: 'var(--tg-theme-hint-color, #7c8a94)', marginTop: '4px' }}>Попробуйте позже</div>
+          </div>
+        )
       )}
 
       <button

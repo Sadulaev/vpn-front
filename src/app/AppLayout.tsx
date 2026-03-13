@@ -1,6 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { getStoredAccessToken, miniappAPI, setStoredAccessToken } from '../services/miniapp-api';
+import { getStoredAccessToken } from '../services/miniapp-api';
 
 const styles: Record<string, React.CSSProperties> = {
   wrapper: {
@@ -49,42 +48,7 @@ const styles: Record<string, React.CSSProperties> = {
 };
 
 export default function AppLayout() {
-  const [isAuthed, setIsAuthed] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    const init = async () => {
-      const twa = window.Telegram?.WebApp;
-      if (twa && twa.initData) {
-        twa.ready();
-        twa.expand();
-        // Fetch and store access token for future direct access
-        try {
-          const { accessToken } = await miniappAPI.getAccessToken();
-          setStoredAccessToken(accessToken);
-        } catch {
-          // Non-critical — token fetch can fail silently
-        }
-        setIsAuthed(true);
-      } else if (getStoredAccessToken()) {
-        // Direct access via stored token
-        setIsAuthed(true);
-      } else {
-        setIsAuthed(false);
-      }
-    };
-
-    if (window.Telegram?.WebApp) {
-      init();
-    } else {
-      const timer = setTimeout(init, 300);
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
-  if (isAuthed === null) {
-    // Ещё загружается
-    return <div style={styles.wrapper} />;
-  }
+  const isAuthed = !!getStoredAccessToken();
 
   if (!isAuthed) {
     return (
@@ -93,7 +57,7 @@ export default function AppLayout() {
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔐</div>
           <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>HyperVPN</div>
           <div style={{ fontSize: '14px', color: 'var(--tg-theme-hint-color, #7c8a94)' }}>
-            Откройте это приложение через Telegram бота или используйте персональную ссылку
+            Используйте персональную ссылку для доступа к приложению
           </div>
         </div>
       </div>
@@ -127,7 +91,7 @@ export default function AppLayout() {
           })}
         >
           <span style={styles.tabIcon}>🛡️</span>
-          <span>Антиглушилка</span>
+          <span>Антиглушилка <span style={{ fontSize: '9px', backgroundColor: '#f9a825', color: '#000', borderRadius: '4px', padding: '1px 4px', fontWeight: 700, verticalAlign: 'middle' }}>BETA</span></span>
         </NavLink>
 
         <NavLink

@@ -2,10 +2,6 @@ import axios from 'axios';
 
 const ACCESS_TOKEN_KEY = 'hyper_vpn_access_token';
 
-const getInitData = (): string => {
-  return window.Telegram?.WebApp?.initData ?? '';
-};
-
 export const getStoredAccessToken = (): string | null => {
   return localStorage.getItem(ACCESS_TOKEN_KEY);
 };
@@ -19,14 +15,9 @@ const miniappClient = axios.create({
 });
 
 miniappClient.interceptors.request.use((config) => {
-  const initData = getInitData();
-  if (initData) {
-    config.headers['X-Telegram-Init-Data'] = initData;
-  } else {
-    const accessToken = getStoredAccessToken();
-    if (accessToken) {
-      config.headers['X-Access-Token'] = accessToken;
-    }
+  const accessToken = getStoredAccessToken();
+  if (accessToken) {
+    config.headers['X-Access-Token'] = accessToken;
   }
   return config;
 });
@@ -95,4 +86,10 @@ export const miniappAPI = {
 
   getAccessToken: (): Promise<{ accessToken: string }> =>
     miniappClient.get<{ accessToken: string }>('/miniapp/access-token').then((r) => r.data),
+
+  getSettings: (): Promise<{ subscriptionsEnabled: boolean }> =>
+    miniappClient.get<{ subscriptionsEnabled: boolean }>('/miniapp/settings').then((r) => r.data),
+
+  verifyToken: (t: string): Promise<{ valid: boolean }> =>
+    miniappClient.get<{ valid: boolean }>(`/miniapp/verify-token?t=${encodeURIComponent(t)}`).then((r) => r.data),
 };
