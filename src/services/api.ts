@@ -49,6 +49,7 @@ export interface Subscription {
   startDate: string;
   createdAt: string;
   updatedAt: string;
+  isAntiThrottling: boolean;
   // Enriched from Marzban (null if not yet migrated)
   marzbanStatus: string | null;
   /** Unix timestamp (seconds) of subscription expiry. null = unlimited. */
@@ -135,6 +136,8 @@ export const subscriptionsAPI = {
   sendMessage: (data: SendMessageDto) => api.post<SendMessageResponse>('/subscriptions/send-message', data),
   exportCsv: (params?: { search?: string; source?: string }) =>
     api.get('/subscriptions/export-csv', { params, responseType: 'blob' }),
+  getUnsynced: () => api.get<Subscription[]>('/subscriptions/unsynced'),
+  sync: () => api.post<{ success: boolean; data: { synced: number; failed: number; errors: string[] } }>('/subscriptions/sync'),
 };
 
 export const paymentsAPI = {

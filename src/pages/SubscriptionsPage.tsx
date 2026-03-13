@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Button, Modal, Form, Input, InputNumber, message, Tag, Select, Empty, Spin, Pagination } from 'antd';
-import { PlusOutlined, CopyOutlined, LinkOutlined, DeleteOutlined, SearchOutlined, ReloadOutlined, DownloadOutlined } from '@ant-design/icons';
+import { Button, Modal, Form, Input, InputNumber, message, Tag, Select, Empty, Spin, Pagination, Badge } from 'antd';
+import { PlusOutlined, CopyOutlined, LinkOutlined, DeleteOutlined, SearchOutlined, ReloadOutlined, DownloadOutlined, SyncOutlined } from '@ant-design/icons';
 import { subscriptionsAPI, Subscription } from '../services/api';
 import dayjs from 'dayjs';
 
@@ -11,6 +11,8 @@ const SubscriptionsPage = () => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [processLoading, setProcessLoading] = useState(false);
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [unsyncedCount, setUnsyncedCount] = useState(0);
   const [searchValue, setSearchValue] = useState('');
   const [sourceFilter, setSourceFilter] = useState<string>('admin');
   const [urlModalVisible, setUrlModalVisible] = useState(false);
@@ -25,6 +27,10 @@ const SubscriptionsPage = () => {
     fetchSubscriptions();
   }, [searchValue, sourceFilter]);
 
+  useEffect(() => {
+    fetchUnsyncedCount();
+  }, []);
+
   const fetchSubscriptions = async () => {
     setLoading(true);
     try {
@@ -37,6 +43,34 @@ const SubscriptionsPage = () => {
       message.error('Ошибка загрузки');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUnsyncedCount = async () => {
+    try {
+      const res = await subscriptionsAPI.getUnsynced();
+      setUnsyncedCount(res.data.length);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleSync = async () => {
+    setSyncLoading(true);
+    try {
+      const res = await subscriptionsAPI.sync();
+      const { synced, failed } = res.data.data;
+      if (failed > 0) {
+        message.warning(`Синхронизировано: ${synced}, ошибок: ${failed}`);
+      } else {
+        message.success(`Синхронизировано: ${synced}`);
+      }
+      fetchSubscriptions();
+      setUnsyncedCount(0);
+    } catch {
+      message.error('Ошибка синхронизации');
+    } finally {
+      setSyncLoading(false);
     }
   };
 
@@ -168,6 +202,11 @@ const SubscriptionsPage = () => {
           <Button icon={<ReloadOutlined />} loading={processLoading} onClick={handleProcessExpired}>
             Истёкшие
           </Button>
+          <Badge count={unsyncedCount} size="small" offset={[-4, 4]}>
+            <Button icon={<SyncOutlined />} loading={syncLoading} onClick={handleSync}>
+              Синхронизировать
+            </Button>
+          </Badge>
           <Button icon={<DownloadOutlined />} onClick={handleExportCsv}>
             Экспорт CSV
           </Button>
@@ -206,9 +245,13 @@ const SubscriptionsPage = () => {
                       />
                     </div>
                   </div>
-                  <Tag color={getStatusColor(sub.marzbanStatus)} style={{ margin: 0 }}>
-                    {getStatusText(sub.marzbanStatus)}
-                  </Tag>
+                  {!sub.marzbanUsername ? (
+                    <Tag color="orange" style={{ margin: 0 }}>Не синхронизирована</Tag>
+                  ) : (
+                    <Tag color={getStatusColor(sub.marzbanStatus)} style={{ margin: 0 }}>
+                      {getStatusText(sub.marzbanStatus)}
+                    </Tag>
+                  )}
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 13, color: '#666', marginBottom: 12 }}>
@@ -315,7 +358,13 @@ const SubscriptionsPage = () => {
         {creationResult && (
           <div>
             <div style={{ background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 8, padding: 12, marginBottom: 12 }}>
-              <div><strong>Marzban username:</strong> {creationResult.marzbanUsername}</div>
+              {creationResult.marzbanUsername ? (
+                <div><strong>Marzban username:</strong> {creationResult.marzbanUsername}</div>
+              ) : (
+                <div style={{ color: '#d46b08' }}>
+                  ⚠️ Marzban сервер не настроен. Подписка создана без привязки. Используйте &laquo;Синхронизировать&raquo; когда сервер будет доступен.
+                </div>
+              )}
               <div><strong>До:</strong> {dayjs(creationResult.subscription?.endDate).format('DD.MM.YYYY')}</div>
             </div>
             {creationResult.subscriptionUrl && (
