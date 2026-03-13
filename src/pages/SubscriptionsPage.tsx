@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button, Modal, Form, Input, InputNumber, message, Tag, Select, Empty, Spin, Pagination, Badge } from 'antd';
-import { PlusOutlined, CopyOutlined, LinkOutlined, DeleteOutlined, SearchOutlined, ReloadOutlined, DownloadOutlined, SyncOutlined } from '@ant-design/icons';
+import { PlusOutlined, CopyOutlined, DeleteOutlined, SearchOutlined, ReloadOutlined, DownloadOutlined, SyncOutlined } from '@ant-design/icons';
 import { subscriptionsAPI, Subscription } from '../services/api';
 import dayjs from 'dayjs';
 
@@ -275,7 +275,31 @@ const SubscriptionsPage = () => {
                     <span style={{ color: '#999' }}>Создан:</span>{' '}
                     {dayjs(sub.createdAt).format('DD.MM.YY')}
                   </div>
+                  {sub.telegramId && (
+                    <div>
+                      <span style={{ color: '#999' }}>Telegram:</span>{' '}
+                      <strong>{sub.telegramId}</strong>
+                    </div>
+                  )}
+                  <div>
+                    <span style={{ color: '#999' }}>Тип:</span>{' '}
+                    <Tag color={sub.isAntiThrottling ? 'green' : 'default'} style={{ marginLeft: 4 }}>
+                      {sub.isAntiThrottling ? 'Антиглушилка' : 'Стандарт'}
+                    </Tag>
+                  </div>
                 </div>
+
+                {sub.subscriptionUrl && (
+                  <div style={{ fontSize: 12, color: '#999', marginBottom: 12, padding: '8px', background: '#f0f5ff', borderRadius: 6 }}>
+                    <div style={{ marginBottom: 4, fontWeight: 600, color: '#667eea' }}>🔗 URL подписки:</div>
+                    <div
+                      style={{ fontFamily: 'monospace', fontSize: 11, wordBreak: 'break-all', cursor: 'pointer' }}
+                      onClick={() => copyToClipboard(sub.subscriptionUrl!)}
+                    >
+                      {sub.subscriptionUrl}
+                    </div>
+                  </div>
+                )}
 
                 {sub.note && (
                   <div style={{ fontSize: 12, color: '#999', marginBottom: 12, padding: '8px', background: '#f9f9f9', borderRadius: 6 }}>
@@ -286,11 +310,17 @@ const SubscriptionsPage = () => {
                 <div style={{ display: 'flex', gap: 8 }}>
                   <Button
                     type="primary"
-                    icon={<LinkOutlined />}
-                    onClick={() => showSubscriptionUrl(sub.id)}
+                    icon={<CopyOutlined />}
+                    onClick={() => {
+                      if (sub.subscriptionUrl) {
+                        copyToClipboard(sub.subscriptionUrl);
+                      } else {
+                        showSubscriptionUrl(sub.id);
+                      }
+                    }}
                     style={{ flex: 1 }}
                   >
-                    URL
+                    {sub.subscriptionUrl ? 'Копировать URL' : 'URL'}
                   </Button>
                   <Button
                     danger
