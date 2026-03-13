@@ -5,13 +5,14 @@ import api from '../services/api';
 const { Title, Text } = Typography;
 
 interface Settings {
-  subscriptionsEnabled: boolean;
+  standardEnabled: boolean;
+  antiThrottlingEnabled: boolean;
 }
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState<string | null>(null);
 
   useEffect(() => {
     api.get<Settings>('/auth/settings')
@@ -20,16 +21,16 @@ export default function SettingsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const toggle = async (subscriptionsEnabled: boolean) => {
-    setSaving(true);
+  const toggle = async (key: keyof Settings, value: boolean) => {
+    setSaving(key);
     try {
-      const { data } = await api.put<Settings>('/auth/settings', { subscriptionsEnabled });
+      const { data } = await api.put<Settings>('/auth/settings', { [key]: value });
       setSettings(data);
-      message.success(subscriptionsEnabled ? 'Продажа подписок включена' : 'Продажа подписок отключена');
+      message.success(value ? 'Продажа включена' : 'Продажа отключена');
     } catch {
       message.error('Ошибка сохранения');
     } finally {
-      setSaving(false);
+      setSaving(null);
     }
   };
 
@@ -39,19 +40,35 @@ export default function SettingsPage() {
     <div style={{ maxWidth: 480 }}>
       <Title level={3}>Настройки</Title>
       <Card>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <Text strong>Продажа подписок</Text>
-            <br />
-            <Text type="secondary" style={{ fontSize: 13 }}>
-              Разрешить пользователям покупать и продлевать подписки
-            </Text>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <Text strong>Стандартные подписки</Text>
+              <br />
+              <Text type="secondary" style={{ fontSize: 13 }}>
+                Разрешить покупку и продление стандартных подписок
+              </Text>
+            </div>
+            <Switch
+              checked={settings?.standardEnabled ?? true}
+              loading={saving === 'standardEnabled'}
+              onChange={(v) => toggle('standardEnabled', v)}
+            />
           </div>
-          <Switch
-            checked={settings?.subscriptionsEnabled ?? true}
-            loading={saving}
-            onChange={toggle}
-          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <Text strong>Антиглушилка</Text>
+              <br />
+              <Text type="secondary" style={{ fontSize: 13 }}>
+                Разрешить покупку и продление подписок антиглушилки
+              </Text>
+            </div>
+            <Switch
+              checked={settings?.antiThrottlingEnabled ?? true}
+              loading={saving === 'antiThrottlingEnabled'}
+              onChange={(v) => toggle('antiThrottlingEnabled', v)}
+            />
+          </div>
         </div>
       </Card>
     </div>

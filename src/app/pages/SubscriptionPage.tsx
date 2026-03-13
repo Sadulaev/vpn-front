@@ -198,11 +198,13 @@ function SubscriptionCard({
   plans,
   onDelete,
   canPurchase,
+  canDelete,
 }: {
   sub: SubscriptionItem;
   plans: SubscriptionPlan[];
   onDelete: (id: string) => void;
   canPurchase: boolean;
+  canDelete: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
@@ -324,15 +326,17 @@ function SubscriptionCard({
           >
             Продлить
           </button>
-          <button
-            disabled={deleting}
-            style={{ ...s.btn, ...s.btnDanger, opacity: deleting ? 0.6 : 1 }}
-            onClick={handleDelete}
-          >
-            {confirmDelete ? 'Подтвердить удаление' : 'Удалить'}
-          </button>
+          {canDelete && (
+            <button
+              disabled={deleting}
+              style={{ ...s.btn, ...s.btnDanger, opacity: deleting ? 0.6 : 1 }}
+              onClick={handleDelete}
+            >
+              {confirmDelete ? 'Подтвердить удаление' : 'Удалить'}
+            </button>
+          )}
         </div>
-        {confirmDelete && !deleting && (
+        {confirmDelete && !deleting && canDelete && (
           <button style={{ ...s.btn, ...s.btnGhost, textAlign: 'center' }} onClick={() => setConfirmDelete(false)}>
             Отмена
           </button>
@@ -354,7 +358,7 @@ export function SubscriptionListPage({ subscriptionType = 'standard' }: { subscr
   const isAnti = subscriptionType === 'anti-throttling';
   const [allSubs, setAllSubs] = useState<SubscriptionItem[] | null>(null);
   const [allPlans, setAllPlans] = useState<SubscriptionPlan[]>([]);
-  const [subscriptionsEnabled, setSubscriptionsEnabled] = useState(true);
+  const [canPurchase, setCanPurchase] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showNewPayment, setShowNewPayment] = useState(false);
   const navigate = useNavigate();
@@ -369,10 +373,10 @@ export function SubscriptionListPage({ subscriptionType = 'standard' }: { subscr
       .then(([subsData, plansData, settings]) => {
         setAllSubs(subsData);
         setAllPlans(plansData);
-        setSubscriptionsEnabled(settings.subscriptionsEnabled);
+        setCanPurchase(isAnti ? settings.antiThrottlingEnabled : settings.standardEnabled);
       })
       .catch((e: any) => setError(e?.response?.data?.message ?? 'Ошибка загрузки данных'));
-  }, []);
+  }, [isAnti]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -428,12 +432,13 @@ export function SubscriptionListPage({ subscriptionType = 'standard' }: { subscr
           sub={sub}
           plans={plans}
           onDelete={handleDelete}
-          canPurchase={subscriptionsEnabled}
+          canPurchase={canPurchase}
+          canDelete={sub.canDelete}
         />
       ))}
 
       {plans.length > 0 && (
-        subscriptionsEnabled ? (
+        canPurchase ? (
           <button style={s.newSubBtn} onClick={() => setShowNewPayment(true)}>
             + Новая подписка
           </button>

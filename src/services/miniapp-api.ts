@@ -34,6 +34,7 @@ export interface SubscriptionItem {
   days: number;
   startDate: string | null;
   createdAt: string;
+  canDelete: boolean;
 }
 
 export interface NodeData {
@@ -87,8 +88,8 @@ export const miniappAPI = {
   getAccessToken: (): Promise<{ accessToken: string }> =>
     miniappClient.get<{ accessToken: string }>('/miniapp/access-token').then((r) => r.data),
 
-  getSettings: (): Promise<{ subscriptionsEnabled: boolean }> =>
-    miniappClient.get<{ subscriptionsEnabled: boolean }>('/miniapp/settings').then((r) => r.data),
+  getSettings: (): Promise<{ standardEnabled: boolean; antiThrottlingEnabled: boolean }> =>
+    miniappClient.get<{ standardEnabled: boolean; antiThrottlingEnabled: boolean }>('/miniapp/settings').then((r) => r.data),
 
   verifyToken: (t: string): Promise<{ valid: boolean }> =>
     miniappClient.get<{ valid: boolean }>(`/miniapp/verify-token?t=${encodeURIComponent(t)}`).then((r) => r.data),
