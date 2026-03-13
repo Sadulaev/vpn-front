@@ -115,11 +115,7 @@ function PaymentSheet({
     try {
       const name = subName.trim() || undefined;
       const { paymentUrl } = await miniappAPI.createPayment(plan.months, plan.price, subscriptionId, name);
-      if (window.Telegram?.WebApp?.openLink) {
-        window.Telegram.WebApp.openLink(paymentUrl);
-      } else {
-        window.open(paymentUrl, '_blank');
-      }
+      window.open(paymentUrl, '_blank');
       onClose();
     } catch {
       setError('Не удалось создать платёж. Попробуйте позже.');

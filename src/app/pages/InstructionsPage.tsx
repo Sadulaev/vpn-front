@@ -157,11 +157,7 @@ const devices: DeviceSection[] = [
 ];
 
 function openLink(url: string) {
-  if (window.Telegram?.WebApp?.openLink) {
-    window.Telegram.WebApp.openLink(url);
-  } else {
-    window.open(url, '_blank');
-  }
+  window.open(url, '_blank');
 }
 
 export default function InstructionsPage() {

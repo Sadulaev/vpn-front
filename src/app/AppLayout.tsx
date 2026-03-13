@@ -1,5 +1,6 @@
-import { Outlet, NavLink } from 'react-router-dom';
-import { getStoredAccessToken } from '../services/miniapp-api';
+import { Outlet, NavLink, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { setStoredAccessToken, miniappAPI } from '../services/miniapp-api';
 
 const styles: Record<string, React.CSSProperties> = {
   wrapper: {
@@ -48,21 +49,40 @@ const styles: Record<string, React.CSSProperties> = {
 };
 
 export default function AppLayout() {
-  const isAuthed = !!getStoredAccessToken();
+  const { token } = useParams<{ token: string }>();
+  const [status, setStatus] = useState<'loading' | 'ok' | 'error'>('loading');
 
-  if (!isAuthed) {
+  useEffect(() => {
+    if (!token) { setStatus('error'); return; }
+    miniappAPI.verifyToken(token)
+      .then(({ valid }) => {
+        if (valid) {
+          setStoredAccessToken(token);
+          setStatus('ok');
+        } else {
+          setStatus('error');
+        }
+      })
+      .catch(() => setStatus('error'));
+  }, [token]);
+
+  if (status === 'error') {
     return (
-      <div style={{ ...styles.wrapper, alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center', padding: '32px' }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔐</div>
-          <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>HyperVPN</div>
-          <div style={{ fontSize: '14px', color: 'var(--tg-theme-hint-color, #7c8a94)' }}>
-            Используйте персональную ссылку для доступа к приложению
-          </div>
-        </div>
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        minHeight: '100dvh', backgroundColor: '#f5f5f5', color: '#333', fontFamily: 'sans-serif',
+      }}>
+        <div style={{ fontSize: '96px', fontWeight: 700, color: '#ccc', lineHeight: 1 }}>404</div>
+        <div style={{ fontSize: '18px', marginTop: '16px', color: '#666' }}>Страница не найдена</div>
       </div>
     );
   }
+
+  if (status === 'loading') {
+    return <div style={{ minHeight: '100dvh', backgroundColor: '#f5f5f5' }} />;
+  }
+
+  const base = `/app/${token}`;
 
   return (
     <div style={styles.wrapper}>
@@ -72,7 +92,7 @@ export default function AppLayout() {
 
       <nav style={styles.tabBar}>
         <NavLink
-          to="/app"
+          to={base}
           end
           style={({ isActive }) => ({
             ...styles.tabItem,
@@ -84,7 +104,7 @@ export default function AppLayout() {
         </NavLink>
 
         <NavLink
-          to="/app/anti"
+          to={`${base}/anti`}
           style={({ isActive }) => ({
             ...styles.tabItem,
             ...(isActive ? styles.tabItemActive : {}),
@@ -95,7 +115,7 @@ export default function AppLayout() {
         </NavLink>
 
         <NavLink
-          to="/app/nodes"
+          to={`${base}/nodes`}
           style={({ isActive }) => ({
             ...styles.tabItem,
             ...(isActive ? styles.tabItemActive : {}),
@@ -106,7 +126,7 @@ export default function AppLayout() {
         </NavLink>
 
         <NavLink
-          to="/app/instructions"
+          to={`${base}/instructions`}
           style={({ isActive }) => ({
             ...styles.tabItem,
             ...(isActive ? styles.tabItemActive : {}),
