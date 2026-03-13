@@ -61,7 +61,7 @@ const DashboardLayout = () => {
           justifyContent: 'space-between',
           borderBottom: '1px solid #eee',
         }}>
-          <span style={{ fontSize: 18, fontWeight: 700, color: '#667eea' }}>Hyper VPN</span>
+          <span style={{ fontSize: 18, fontWeight: 700, color: '#667eea' }}>Панель управления</span>
           <Button type="text" icon={<MenuOutlined />} onClick={() => setDrawerOpen(true)} />
         </div>
 
@@ -160,7 +160,7 @@ const DashboardLayout = () => {
           marginBottom: 32,
           textAlign: 'center',
         }}>
-          Hyper VPN
+          Панель управления
         </div>
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>

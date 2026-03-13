@@ -61,7 +61,7 @@ const LoginPage = () => {
           }}>
             <span style={{ fontSize: 28, color: '#fff', fontWeight: 700 }}>H</span>
           </div>
-          <h1 style={{ fontSize: 24, marginBottom: 4 }}>Hyper VPN</h1>
+          <h1 style={{ fontSize: 24, marginBottom: 4 }}>Панель управления</h1>
           <p style={{ color: '#999', margin: 0 }}>Панель управления</p>
         </div>
 
