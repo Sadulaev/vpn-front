@@ -16,7 +16,7 @@ import NodesPage from './app/pages/NodesPage';
 import InstructionsPage from './app/pages/InstructionsPage';
 import { setStoredAccessToken, miniappAPI } from './services/miniapp-api';
 
-/** Validates token via backend and stores it, or shows an error stub */
+/** Validates token via backend and stores it, or shows a generic 404 */
 function AuthGate() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
@@ -38,21 +38,16 @@ function AuthGate() {
     return (
       <div style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        minHeight: '100dvh', backgroundColor: '#17212b', color: '#fff', padding: '32px', textAlign: 'center',
+        minHeight: '100dvh', backgroundColor: '#f5f5f5', color: '#333', fontFamily: 'sans-serif',
       }}>
-        <div style={{ fontSize: '64px', marginBottom: '16px' }}>🚫</div>
-        <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px' }}>Неверная ссылка</div>
-        <div style={{ fontSize: '14px', color: '#7c8a94' }}>Ссылка недействительна или устарела. Попросите новую у бота.</div>
+        <div style={{ fontSize: '96px', fontWeight: 700, color: '#ccc', lineHeight: 1 }}>404</div>
+        <div style={{ fontSize: '18px', marginTop: '16px', color: '#666' }}>Страница не найдена</div>
       </div>
     );
   }
 
-  // Loading
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh', backgroundColor: '#17212b' }}>
-      <div style={{ color: '#7c8a94', fontSize: '16px' }}>Проверка…</div>
-    </div>
-  );
+  // Loading — blank while verifying
+  return <div style={{ minHeight: '100dvh', backgroundColor: '#f5f5f5' }} />;
 }
 
 function App() {
