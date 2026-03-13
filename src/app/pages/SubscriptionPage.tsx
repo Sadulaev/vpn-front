@@ -97,15 +97,17 @@ const s: Record<string, React.CSSProperties> = {
 function PaymentSheet({
   plans,
   subscriptionId,
+  suggestedName,
   onClose,
 }: {
   plans: SubscriptionPlan[];
   subscriptionId?: string;
+  suggestedName?: string;
   onClose: () => void;
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [subName, setSubName] = useState('');
+  const [subName, setSubName] = useState(suggestedName ?? '');
 
   const pay = async (plan: SubscriptionPlan) => {
     setLoading(true);
@@ -447,6 +449,7 @@ export function SubscriptionListPage({ subscriptionType = 'standard' }: { subscr
       {showNewPayment && (
         <PaymentSheet
           plans={plans}
+          suggestedName={isAnti ? `Антиглушилка-${subs.length + 1}` : `Стандарт-${subs.length + 1}`}
           onClose={() => setShowNewPayment(false)}
         />
       )}
