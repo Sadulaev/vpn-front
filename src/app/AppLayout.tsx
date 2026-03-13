@@ -1,6 +1,12 @@
-import { Outlet, NavLink, useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { setStoredAccessToken, miniappAPI } from '../services/miniapp-api';
+import SubscriptionPage from './pages/SubscriptionPage';
+import AntiThrottlingPage from './pages/AntiThrottlingPage';
+import NodesPage from './pages/NodesPage';
+import InstructionsPage from './pages/InstructionsPage';
+
+type Tab = 'standard' | 'anti' | 'nodes' | 'instructions';
 
 const styles: Record<string, React.CSSProperties> = {
   wrapper: {
@@ -33,7 +39,9 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     gap: '3px',
-    textDecoration: 'none',
+    border: 'none',
+    background: 'none',
+    cursor: 'pointer',
     color: 'var(--tg-theme-hint-color, #7c8a94)',
     fontSize: '11px',
     fontWeight: 500,
@@ -48,9 +56,18 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
+const TAB_CONTENT: Record<Tab, React.FC> = {
+  standard: SubscriptionPage,
+  anti: AntiThrottlingPage,
+  nodes: NodesPage,
+  instructions: InstructionsPage,
+};
+
 export default function AppLayout() {
   const { token } = useParams<{ token: string }>();
+  const navigate = useNavigate();
   const [status, setStatus] = useState<'loading' | 'ok' | 'error'>('loading');
+  const [tab, setTab] = useState<Tab>('standard');
 
   useEffect(() => {
     if (!token) { setStatus('error'); return; }
@@ -66,75 +83,54 @@ export default function AppLayout() {
       .catch(() => setStatus('error'));
   }, [token]);
 
-  if (status === 'error') {
-    return (
-      <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        minHeight: '100dvh', backgroundColor: '#f5f5f5', color: '#333', fontFamily: 'sans-serif',
-      }}>
-        <div style={{ fontSize: '96px', fontWeight: 700, color: '#ccc', lineHeight: 1 }}>404</div>
-        <div style={{ fontSize: '18px', marginTop: '16px', color: '#666' }}>Страница не найдена</div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (status === 'error') navigate('/404', { replace: true });
+  }, [status, navigate]);
 
-  if (status === 'loading') {
+  if (status !== 'ok') {
     return <div style={{ minHeight: '100dvh', backgroundColor: '#f5f5f5' }} />;
   }
 
-  const base = `/app/${token}`;
+  const ActivePage = TAB_CONTENT[tab];
 
   return (
     <div style={styles.wrapper}>
       <div style={styles.content}>
-        <Outlet />
+        <ActivePage />
       </div>
 
       <nav style={styles.tabBar}>
-        <NavLink
-          to={base}
-          end
-          style={({ isActive }) => ({
-            ...styles.tabItem,
-            ...(isActive ? styles.tabItemActive : {}),
-          })}
+        <button
+          style={{ ...styles.tabItem, ...(tab === 'standard' ? styles.tabItemActive : {}) }}
+          onClick={() => setTab('standard')}
         >
-          <span style={styles.tabIcon}>�</span>
+          <span style={styles.tabIcon}>🔑</span>
           <span>Стандарт</span>
-        </NavLink>
+        </button>
 
-        <NavLink
-          to={`${base}/anti`}
-          style={({ isActive }) => ({
-            ...styles.tabItem,
-            ...(isActive ? styles.tabItemActive : {}),
-          })}
+        <button
+          style={{ ...styles.tabItem, ...(tab === 'anti' ? styles.tabItemActive : {}) }}
+          onClick={() => setTab('anti')}
         >
           <span style={styles.tabIcon}>🛡️</span>
           <span>Антиглушилка <span style={{ fontSize: '9px', backgroundColor: '#f9a825', color: '#000', borderRadius: '4px', padding: '1px 4px', fontWeight: 700, verticalAlign: 'middle' }}>BETA</span></span>
-        </NavLink>
+        </button>
 
-        <NavLink
-          to={`${base}/nodes`}
-          style={({ isActive }) => ({
-            ...styles.tabItem,
-            ...(isActive ? styles.tabItemActive : {}),
-          })}
+        <button
+          style={{ ...styles.tabItem, ...(tab === 'nodes' ? styles.tabItemActive : {}) }}
+          onClick={() => setTab('nodes')}
         >
           <span style={styles.tabIcon}>🖥</span>
           <span>Серверы</span>
-        </NavLink>
+        </button>
 
-        <NavLink
-          to={`${base}/instructions`}
-          style={({ isActive }) => ({
-            ...styles.tabItem,
-            ...(isActive ? styles.tabItemActive : {}),
-          })}
+        <button
+          style={{ ...styles.tabItem, ...(tab === 'instructions' ? styles.tabItemActive : {}) }}
+          onClick={() => setTab('instructions')}
         >
           <span style={styles.tabIcon}>📍</span>
           <span>Инструкции</span>
-        </NavLink>
+        </button>
       </nav>
     </div>
   );

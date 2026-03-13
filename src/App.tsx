@@ -9,22 +9,15 @@ import MessagesPage from './pages/MessagesPage';
 import PaymentsPage from './pages/PaymentsPage';
 import SettingsPage from './pages/SettingsPage';
 import AppLayout from './app/AppLayout';
-import SubscriptionPage from './app/pages/SubscriptionPage';
-import AntiThrottlingPage from './app/pages/AntiThrottlingPage';
-import NodesPage from './app/pages/NodesPage';
-import InstructionsPage from './app/pages/InstructionsPage';
+import NotFoundPage from './app/pages/NotFoundPage';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Miniapp — all pages under /app/:token */}
-        <Route path="/app/:token" element={<AppLayout />}>
-          <Route index element={<SubscriptionPage />} />
-          <Route path="anti" element={<AntiThrottlingPage />} />
-          <Route path="nodes" element={<NodesPage />} />
-          <Route path="instructions" element={<InstructionsPage />} />
-        </Route>
+        {/* Miniapp — single route, tabs inside */}
+        <Route path="/app/:token" element={<AppLayout />} />
+        <Route path="/404" element={<NotFoundPage />} />
 
         {/* Admin panel */}
         <Route path="/admin/*" element={
@@ -53,7 +46,7 @@ function App() {
           </AuthProvider>
         } />
 
-        <Route path="*" element={<Navigate to="/admin" replace />} />
+        <Route path="*" element={<Navigate to="/404" replace />} />
       </Routes>
     </BrowserRouter>
   );
