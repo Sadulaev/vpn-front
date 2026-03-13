@@ -50,6 +50,8 @@ export interface Subscription {
   createdAt: string;
   updatedAt: string;
   isAntiThrottling: boolean;
+  /** User-defined subscription name stored in DB */
+  name: string | null;
   // Enriched from Marzban (null if not yet migrated)
   marzbanStatus: string | null;
   /** Unix timestamp (seconds) of subscription expiry. null = unlimited. */

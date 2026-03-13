@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { miniappAPI, SubscriptionItem, SubscriptionPlan } from '../../services/miniapp-api';
+import { useTabContext } from '../TabContext';
 
 const BYTES_IN_GB = 1024 * 1024 * 1024;
 
@@ -195,12 +195,14 @@ function PaymentSheet({
 
 function SubscriptionCard({
   sub,
+  index,
   plans,
   onDelete,
   canPurchase,
   canDelete,
 }: {
   sub: SubscriptionItem;
+  index: number;
   plans: SubscriptionPlan[];
   onDelete: (id: string) => void;
   canPurchase: boolean;
@@ -219,7 +221,8 @@ function SubscriptionCard({
 
   // Определяем тип подписки по лимиту трафика
   const isAntiThrottling = limitGb && limitGb > 0;
-  const subType = isAntiThrottling ? 'Антиглушилка' : 'Стандарт';
+  const fallbackType = isAntiThrottling ? 'Антиглушилка' : 'Стандарт';
+  const subType = sub.note ? sub.note.slice(0, 30) : `${fallbackType} — ${index}`;
   const subTypeIcon = isAntiThrottling ? '🔒' : '📱';
 
   const handleCopy = () => {
@@ -361,7 +364,7 @@ export function SubscriptionListPage({ subscriptionType = 'standard' }: { subscr
   const [canPurchase, setCanPurchase] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showNewPayment, setShowNewPayment] = useState(false);
-  const navigate = useNavigate();
+  const { setTab } = useTabContext();
 
   const load = useCallback(() => {
     setError(null);
@@ -426,10 +429,11 @@ export function SubscriptionListPage({ subscriptionType = 'standard' }: { subscr
         </div>
       )}
 
-      {subs.map((sub) => (
+      {subs.map((sub, idx) => (
         <SubscriptionCard
           key={sub.id}
           sub={sub}
+          index={idx + 1}
           plans={plans}
           onDelete={handleDelete}
           canPurchase={canPurchase}
@@ -462,7 +466,7 @@ export function SubscriptionListPage({ subscriptionType = 'standard' }: { subscr
           backgroundColor: 'var(--tg-theme-secondary-bg-color, #232e3c)',
           color: 'var(--tg-theme-text-color, #fff)',
         }}
-        onClick={() => navigate('/app/instructions')}
+        onClick={() => setTab('instructions')}
       >
         📍 Инструкция по установке
       </button>

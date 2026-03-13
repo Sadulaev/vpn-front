@@ -35,6 +35,7 @@ export interface SubscriptionItem {
   startDate: string | null;
   createdAt: string;
   canDelete: boolean;
+  note: string | null;
 }
 
 export interface NodeData {

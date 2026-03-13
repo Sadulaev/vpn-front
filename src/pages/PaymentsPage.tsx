@@ -78,12 +78,14 @@ const PaymentsPage = () => {
         params.dateTo = dateRange[1].toISOString();
       }
       const response = await paymentsAPI.exportCsv(params);
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'text/csv;charset=utf-8' }));
       const a = document.createElement('a');
       a.href = url;
       a.download = `payment-sessions-${dayjs().format('YYYY-MM-DD')}.csv`;
+      document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setTimeout(() => window.URL.revokeObjectURL(url), 100);
       message.success('CSV файл скачан');
     } catch {
       message.error('Ошибка экспорта');

@@ -100,9 +100,6 @@ export default function NodesPage() {
               {node.message && node.status !== 'connected' && (
                 <div style={s.nodeMsg}>{node.message}</div>
               )}
-              <div style={{ ...s.nodeStatus, color: 'var(--tg-theme-hint-color, #7c8a94)' }}>
-                {node.address}
-              </div>
             </div>
             <span style={{ ...s.badge, backgroundColor: cfg.color + '22', color: cfg.color }}>
               {cfg.label}

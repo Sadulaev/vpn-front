@@ -113,12 +113,14 @@ const SubscriptionsPage = () => {
       if (searchValue) params.search = searchValue;
       if (sourceFilter) params.source = sourceFilter;
       const response = await subscriptionsAPI.exportCsv(params);
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'text/csv;charset=utf-8' }));
       const a = document.createElement('a');
       a.href = url;
       a.download = `subscriptions-${dayjs().format('YYYY-MM-DD')}.csv`;
+      document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setTimeout(() => window.URL.revokeObjectURL(url), 100);
       message.success('CSV файл скачан');
     } catch {
       message.error('Ошибка экспорта');
@@ -238,7 +240,10 @@ const SubscriptionsPage = () => {
                   <div>
                     <span style={{ color: '#999', fontSize: 12 }}>#{(page - 1) * pageSize + index + 1}</span>
                     <div style={{ fontWeight: 600, fontSize: 14, marginTop: 2 }}>
-                      {(sub.marzbanUsername ?? sub.id.replace(/-/g, '')).slice(0, 12)}...
+                      {sub.name
+                        ? sub.name
+                        : `${sub.isAntiThrottling ? 'Антиглушилка' : 'Стандарт'} — ${(sub.marzbanUsername ?? sub.id.replace(/-/g, '')).slice(0, 8)}...`
+                      }
                       <CopyOutlined
                         style={{ marginLeft: 8, color: '#667eea', cursor: 'pointer' }}
                         onClick={() => copyToClipboard(sub.marzbanUsername ?? sub.id)}

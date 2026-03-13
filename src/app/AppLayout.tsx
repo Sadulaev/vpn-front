@@ -5,8 +5,7 @@ import SubscriptionPage from './pages/SubscriptionPage';
 import AntiThrottlingPage from './pages/AntiThrottlingPage';
 import NodesPage from './pages/NodesPage';
 import InstructionsPage from './pages/InstructionsPage';
-
-type Tab = 'standard' | 'anti' | 'nodes' | 'instructions';
+import { TabContext, type Tab } from './TabContext';
 
 const styles: Record<string, React.CSSProperties> = {
   wrapper: {
@@ -94,6 +93,7 @@ export default function AppLayout() {
   const ActivePage = TAB_CONTENT[tab];
 
   return (
+    <TabContext.Provider value={{ setTab }}>
     <div style={styles.wrapper}>
       <div style={styles.content}>
         <ActivePage />
@@ -133,5 +133,6 @@ export default function AppLayout() {
         </button>
       </nav>
     </div>
+    </TabContext.Provider>
   );
 }
