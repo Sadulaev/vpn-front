@@ -105,12 +105,14 @@ function PaymentSheet({
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [subName, setSubName] = useState('');
 
   const pay = async (plan: SubscriptionPlan) => {
     setLoading(true);
     setError(null);
     try {
-      const { paymentUrl } = await miniappAPI.createPayment(plan.months, plan.price, subscriptionId);
+      const name = subName.trim() || undefined;
+      const { paymentUrl } = await miniappAPI.createPayment(plan.months, plan.price, subscriptionId, name);
       if (window.Telegram?.WebApp?.openLink) {
         window.Telegram.WebApp.openLink(paymentUrl);
       } else {
@@ -161,6 +163,26 @@ function PaymentSheet({
         <div style={s.sheetTitle}>
           {subscriptionId ? 'Продлить подписку' : 'Новая подписка'}
         </div>
+        {!subscriptionId && (
+          <input
+            type="text"
+            placeholder="Название подписки (необязательно)"
+            value={subName}
+            onChange={(e) => setSubName(e.target.value)}
+            maxLength={100}
+            style={{
+              padding: '10px 14px',
+              borderRadius: '10px',
+              border: '1.5px solid rgba(255,255,255,0.12)',
+              backgroundColor: 'var(--tg-theme-secondary-bg-color, #232e3c)',
+              color: 'var(--tg-theme-text-color, #fff)',
+              fontSize: '14px',
+              outline: 'none',
+              width: '100%',
+              boxSizing: 'border-box',
+            }}
+          />
+        )}
         {error && <div style={{ color: '#f44336', fontSize: '13px' }}>{error}</div>}
         <div style={s.planGrid}>
           {plans.map(renderPlanButton)}
@@ -275,29 +297,18 @@ function SubscriptionCard({
               <button
                 style={{ ...s.btn, ...s.btnGhost, fontSize: '12px', padding: '6px 10px' }}
                 onClick={() => {
-                  const encoded = encodeURIComponent(sub.subscriptionUrl!);
-                  window.location.href = `hiddify://import/${encoded}`;
+                  window.location.href = `happ://add/${sub.subscriptionUrl!}`;
                 }}
               >
-                Hiddify / Happ
+                Happ
               </button>
               <button
                 style={{ ...s.btn, ...s.btnGhost, fontSize: '12px', padding: '6px 10px' }}
                 onClick={() => {
-                  const b64 = btoa(sub.subscriptionUrl!);
-                  window.location.href = `v2rayng://install-sub?url=${b64}`;
+                  window.location.href = `v2raytun://import/${sub.subscriptionUrl!}`;
                 }}
               >
-                v2rayNG
-              </button>
-              <button
-                style={{ ...s.btn, ...s.btnGhost, fontSize: '12px', padding: '6px 10px' }}
-                onClick={() => {
-                  const encoded = encodeURIComponent(sub.subscriptionUrl!);
-                  window.location.href = `streisand://import/${encoded}`;
-                }}
-              >
-                Streisand
+                V2raytun
               </button>
             </div>
           </>

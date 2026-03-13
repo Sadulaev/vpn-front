@@ -1,5 +1,6 @@
 import { Outlet, NavLink } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { getStoredAccessToken, miniappAPI, setStoredAccessToken } from '../services/miniapp-api';
 
 const styles: Record<string, React.CSSProperties> = {
   wrapper: {
@@ -48,17 +49,27 @@ const styles: Record<string, React.CSSProperties> = {
 };
 
 export default function AppLayout() {
-  const [isTelegram, setIsTelegram] = useState<boolean | null>(null);
+  const [isAuthed, setIsAuthed] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const init = () => {
+    const init = async () => {
       const twa = window.Telegram?.WebApp;
-      if (twa) {
+      if (twa && twa.initData) {
         twa.ready();
         twa.expand();
-        setIsTelegram(!!twa.initData);
+        // Fetch and store access token for future direct access
+        try {
+          const { accessToken } = await miniappAPI.getAccessToken();
+          setStoredAccessToken(accessToken);
+        } catch {
+          // Non-critical — token fetch can fail silently
+        }
+        setIsAuthed(true);
+      } else if (getStoredAccessToken()) {
+        // Direct access via stored token
+        setIsAuthed(true);
       } else {
-        setIsTelegram(false);
+        setIsAuthed(false);
       }
     };
 
@@ -70,19 +81,19 @@ export default function AppLayout() {
     }
   }, []);
 
-  if (isTelegram === null) {
+  if (isAuthed === null) {
     // Ещё загружается
     return <div style={styles.wrapper} />;
   }
 
-  if (!isTelegram) {
+  if (!isAuthed) {
     return (
       <div style={{ ...styles.wrapper, alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center', padding: '32px' }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📱</div>
-          <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>Telegram Mini App</div>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔐</div>
+          <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>HyperVPN</div>
           <div style={{ fontSize: '14px', color: 'var(--tg-theme-hint-color, #7c8a94)' }}>
-            Откройте это приложение через Telegram бота
+            Откройте это приложение через Telegram бота или используйте персональную ссылку
           </div>
         </div>
       </div>

@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
@@ -12,12 +13,29 @@ import SubscriptionPage from './app/pages/SubscriptionPage';
 import AntiThrottlingPage from './app/pages/AntiThrottlingPage';
 import NodesPage from './app/pages/NodesPage';
 import InstructionsPage from './app/pages/InstructionsPage';
+import { setStoredAccessToken } from './services/miniapp-api';
+
+/** Stores access token from URL and redirects to /app */
+function TokenRedirect() {
+  const { token } = useParams<{ token: string }>();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (token) {
+      setStoredAccessToken(token);
+    }
+    navigate('/app', { replace: true });
+  }, [token, navigate]);
+
+  return null;
+}
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         {/* Telegram Mini App */}
+        <Route path="/app/t/:token" element={<TokenRedirect />} />
         <Route path="/app" element={<AppLayout />}>
           <Route index element={<SubscriptionPage />} />
           <Route path="anti" element={<AntiThrottlingPage />} />

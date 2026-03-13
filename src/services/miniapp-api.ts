@@ -1,7 +1,17 @@
 import axios from 'axios';
 
+const ACCESS_TOKEN_KEY = 'hyper_vpn_access_token';
+
 const getInitData = (): string => {
   return window.Telegram?.WebApp?.initData ?? '';
+};
+
+export const getStoredAccessToken = (): string | null => {
+  return localStorage.getItem(ACCESS_TOKEN_KEY);
+};
+
+export const setStoredAccessToken = (token: string): void => {
+  localStorage.setItem(ACCESS_TOKEN_KEY, token);
 };
 
 const miniappClient = axios.create({
@@ -12,6 +22,11 @@ miniappClient.interceptors.request.use((config) => {
   const initData = getInitData();
   if (initData) {
     config.headers['X-Telegram-Init-Data'] = initData;
+  } else {
+    const accessToken = getStoredAccessToken();
+    if (accessToken) {
+      config.headers['X-Access-Token'] = accessToken;
+    }
   }
   return config;
 });
@@ -67,9 +82,9 @@ export const miniappAPI = {
   deleteSubscription: (id: string): Promise<void> =>
     miniappClient.delete(`/miniapp/subscriptions/${id}`).then(() => undefined),
 
-  createPayment: (period: number, price: number, subscriptionId?: string): Promise<PaymentLinkResponse> =>
+  createPayment: (period: number, price: number, subscriptionId?: string, subscriptionName?: string): Promise<PaymentLinkResponse> =>
     miniappClient
-      .post<PaymentLinkResponse>('/miniapp/pay', { period, price, subscriptionId })
+      .post<PaymentLinkResponse>('/miniapp/pay', { period, price, subscriptionId, subscriptionName })
       .then((r) => r.data),
 
   getPlans: (): Promise<SubscriptionPlan[]> =>
@@ -77,4 +92,7 @@ export const miniappAPI = {
 
   getNodes: (): Promise<NodesResponse> =>
     miniappClient.get<NodesResponse>('/miniapp/nodes').then((r) => r.data),
+
+  getAccessToken: (): Promise<{ accessToken: string }> =>
+    miniappClient.get<{ accessToken: string }>('/miniapp/access-token').then((r) => r.data),
 };
