@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button, Modal, Form, Input, InputNumber, message, Tag, Select, Empty, Spin, Pagination, Badge } from 'antd';
-import { PlusOutlined, CopyOutlined, DeleteOutlined, SearchOutlined, ReloadOutlined, DownloadOutlined, SyncOutlined } from '@ant-design/icons';
+import { PlusOutlined, CopyOutlined, DeleteOutlined, SearchOutlined, ReloadOutlined, DownloadOutlined, SyncOutlined, TeamOutlined } from '@ant-design/icons';
 import { subscriptionsAPI, Subscription } from '../services/api';
 import dayjs from 'dayjs';
 
@@ -14,7 +14,7 @@ const SubscriptionsPage = () => {
   const [syncLoading, setSyncLoading] = useState(false);
   const [unsyncedCount, setUnsyncedCount] = useState(0);
   const [searchValue, setSearchValue] = useState('');
-  const [sourceFilter, setSourceFilter] = useState<string>('admin');
+  const [sourceFilter, setSourceFilter] = useState<string>('');
   const [urlModalVisible, setUrlModalVisible] = useState(false);
   const [subscriptionUrl, setSubscriptionUrl] = useState('');
   const [resultModalVisible, setResultModalVisible] = useState(false);
@@ -127,6 +127,23 @@ const SubscriptionsPage = () => {
     }
   };
 
+  const handleExportUniqueTg = async () => {
+    try {
+      const response = await subscriptionsAPI.exportUniqueTelegramIds();
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'text/csv;charset=utf-8' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `unique-telegram-ids-${dayjs().format('YYYY-MM-DD')}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => window.URL.revokeObjectURL(url), 100);
+      message.success('CSV файл скачан');
+    } catch {
+      message.error('Ошибка экспорта');
+    }
+  };
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     message.success('Скопировано');
@@ -212,6 +229,9 @@ const SubscriptionsPage = () => {
           <Button icon={<DownloadOutlined />} onClick={handleExportCsv}>
             Экспорт CSV
           </Button>
+          <Button icon={<TeamOutlined />} onClick={handleExportUniqueTg}>
+            Уник. TG ID
+          </Button>
         </div>
       </div>
 
@@ -267,7 +287,7 @@ const SubscriptionsPage = () => {
                   <div>
                     <span style={{ color: '#999' }}>До:</span>{' '}
                     <strong style={{ color: sub.marzbanExpire && sub.marzbanExpire * 1000 < Date.now() ? '#ff4d4f' : undefined }}>
-                      {sub.marzbanExpire ? dayjs.unix(sub.marzbanExpire).format('DD.MM.YY') : '—'}
+                      {sub.marzbanExpire ? dayjs.unix(sub.marzbanExpire).format('DD.MM.YYYY') : '—'}
                     </strong>
                   </div>
                   <div>
@@ -278,7 +298,7 @@ const SubscriptionsPage = () => {
                   </div>
                   <div>
                     <span style={{ color: '#999' }}>Создан:</span>{' '}
-                    {dayjs(sub.createdAt).format('DD.MM.YY')}
+                    {dayjs(sub.createdAt).format('DD.MM.YYYY')}
                   </div>
                   {sub.telegramId && (
                     <div>
@@ -353,7 +373,7 @@ const SubscriptionsPage = () => {
               total={subscriptions.length}
               onChange={(p, ps) => { setPage(p); setPageSize(ps); }}
               showSizeChanger
-              pageSizeOptions={['10', '20', '50']}
+              pageSizeOptions={['20', '50', '100', '500']}
               size="small"
               showTotal={(total) => `${total} шт.`}
             />

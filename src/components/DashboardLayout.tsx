@@ -3,7 +3,6 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Button, Drawer } from 'antd';
 import {
   FileTextOutlined,
-  NodeIndexOutlined,
   MessageOutlined,
   DollarOutlined,
   LogoutOutlined,
@@ -27,7 +26,6 @@ const DashboardLayout = () => {
 
   const menuItems = [
     { key: '/admin/subscriptions', icon: <FileTextOutlined />, label: 'Подписки' },
-    { key: '/admin/marzban', icon: <NodeIndexOutlined />, label: 'Marzban' },
     { key: '/admin/messages', icon: <MessageOutlined />, label: 'Рассылка' },
     { key: '/admin/payments', icon: <DollarOutlined />, label: 'Платежи' },
     { key: '/admin/settings', icon: <SettingOutlined />, label: 'Настройки' },
