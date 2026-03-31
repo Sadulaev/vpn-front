@@ -22,6 +22,8 @@ services:
         limits:
           memory: 128M
           cpus: '0.15'
+    ports:
+      - "6000:6000"
     networks:
       - remnawave-network
     logging:
