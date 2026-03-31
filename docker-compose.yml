@@ -10,8 +10,6 @@ services:
         VITE_ADMIN_USERNAME: ${VITE_ADMIN_USERNAME:-admin}
         VITE_ADMIN_PASSWORD: ${VITE_ADMIN_PASSWORD}
     container_name: hyper-vpn-frontend
-    ports:
-      - "127.0.0.1:6000:6000"
     restart: always
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:6000/"]
@@ -24,11 +22,18 @@ services:
         limits:
           memory: 128M
           cpus: '0.15'
+    networks:
+      - remnawave-network
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
+
+networks:
+  remnawave-network:
+    name: remnawave-network
+    external: true
 
 # Nginx config for external server:
 # location /admin {
