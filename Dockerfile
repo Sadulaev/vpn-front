@@ -34,9 +34,9 @@ RUN rm -rf src node_modules package*.json tsconfig.json vite.config.ts
 
 # Здоровье контейнера
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --quiet --tries=1 --spider http://localhost:3001/ || exit 1
+    CMD wget --quiet --tries=1 --spider http://localhost:6000/ || exit 1
 
-EXPOSE 3001
+EXPOSE 6000
 
 # Запускаем serve для раздачи статики
-CMD ["serve", "-s", "dist", "-l", "3001"]
+CMD ["serve", "-s", "dist", "-l", "6000"]
