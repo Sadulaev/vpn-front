@@ -24,18 +24,11 @@ services:
           cpus: '0.15'
     ports:
       - "6000:6000"
-    networks:
-      - remnawave-network
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
-
-networks:
-  remnawave-network:
-    name: remnawave-network
-    external: true
 
 # Nginx config for external server:
 # location /admin {
