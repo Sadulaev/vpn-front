@@ -155,4 +155,40 @@ export const paymentsAPI = {
     api.get('/payment/export-csv', { params, responseType: 'blob' }),
 };
 
+// Plans API
+export interface Plan {
+  id: number;
+  planType: 'standard' | 'anti-throttling';
+  label: string;
+  months: number;
+  price: number;
+  dataLimitGB: number;
+  description: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreatePlanDto {
+  planType: 'standard' | 'anti-throttling';
+  label: string;
+  months: number;
+  price: number;
+  dataLimitGB?: number;
+  description?: string;
+  isActive?: boolean;
+  sortOrder?: number;
+}
+
+export type UpdatePlanDto = Partial<CreatePlanDto>;
+
+export const plansAPI = {
+  getAll: (planType?: 'standard' | 'anti-throttling') =>
+    api.get<Plan[]>('/plans', { params: planType ? { planType } : undefined }),
+  create: (data: CreatePlanDto) => api.post<Plan>('/plans', data),
+  update: (id: number, data: UpdatePlanDto) => api.patch<Plan>(`/plans/${id}`, data),
+  remove: (id: number) => api.delete(`/plans/${id}`),
+};
+
 export default api;

@@ -6,6 +6,7 @@ import DashboardLayout from './components/DashboardLayout';
 import SubscriptionsPage from './pages/SubscriptionsPage';
 import MessagesPage from './pages/MessagesPage';
 import PaymentsPage from './pages/PaymentsPage';
+import PlansPage from './pages/PlansPage';
 import SettingsPage from './pages/SettingsPage';
 import AppLayout from './app/AppLayout';
 import NotFoundPage from './app/pages/NotFoundPage';
@@ -35,6 +36,7 @@ function App() {
                 <Route path="subscriptions" element={<SubscriptionsPage />} />
                 <Route path="messages" element={<MessagesPage />} />
                 <Route path="payments" element={<PaymentsPage />} />
+                <Route path="plans" element={<PlansPage />} />
                 <Route path="settings" element={<SettingsPage />} />
               </Route>
               <Route path="*" element={<Navigate to="/admin" replace />} />
