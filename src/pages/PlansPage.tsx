@@ -21,10 +21,6 @@ import { plansAPI, Plan, CreatePlanDto } from '../services/api';
 
 const { Title } = Typography;
 
-const TYPE_LABELS: Record<Plan['planType'], string> = {
-  standard: '🌐 Базовый',
-  'anti-throttling': '⚡ Турбо',
-};
 
 export default function PlansPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
