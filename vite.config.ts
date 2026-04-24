@@ -6,8 +6,7 @@ export default defineConfig({
   server: {
     port: 6000,
     allowedHosts: [
-      'api.kavkaz-market.tech',
-      'auth.kavkaz-market.tech',
+      'api.santa-cloud.tech',
     ],
     proxy: {
       '/api': {
