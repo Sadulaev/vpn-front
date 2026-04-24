@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Form, Input, Button, message } from 'antd';
-import { SendOutlined, UserOutlined } from '@ant-design/icons';
+import { Form, Input, Button, message, Upload } from 'antd';
+import { SendOutlined, UserOutlined, PictureOutlined, DeleteOutlined } from '@ant-design/icons';
 import { subscriptionsAPI } from '../services/api';
 
 const { TextArea } = Input;
@@ -15,6 +15,21 @@ export default function MessagesPage() {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [lastResult, setLastResult] = useState<SendResult | null>(null);
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  const handlePhotoSelect = (file: File) => {
+    setPhoto(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setPhotoPreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+    return false; // prevent auto-upload
+  };
+
+  const handleRemovePhoto = () => {
+    setPhoto(null);
+    setPhotoPreview(null);
+  };
 
   const handleSend = async (values: { message: string; telegramId?: string }) => {
     setLoading(true);
@@ -24,12 +39,14 @@ export default function MessagesPage() {
       const response = await subscriptionsAPI.sendMessage({
         message: values.message,
         telegramId: values.telegramId?.trim() || undefined,
-      });
+      }, photo ?? undefined);
 
       if (response.data.success) {
         if (response.data.message) {
           message.success('Рассылка запущена! Результаты в логах сервера.', 10);
           form.resetFields(['message', 'telegramId']);
+          setPhoto(null);
+          setPhotoPreview(null);
         } else {
           const result = response.data.data;
           if (result) {
@@ -37,6 +54,8 @@ export default function MessagesPage() {
             if (result.failed === 0) {
               message.success('Отправлено!');
               form.resetFields(['message', 'telegramId']);
+              setPhoto(null);
+              setPhotoPreview(null);
             } else {
               message.error('Ошибка отправки');
             }
@@ -83,6 +102,33 @@ export default function MessagesPage() {
             />
           </Form.Item>
 
+          <Form.Item label="Фото (опционально)">
+            {photoPreview ? (
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                <img
+                  src={photoPreview}
+                  alt="preview"
+                  style={{ maxWidth: 200, maxHeight: 200, borderRadius: 8, display: 'block' }}
+                />
+                <Button
+                  size="small"
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={handleRemovePhoto}
+                  style={{ position: 'absolute', top: 4, right: 4 }}
+                />
+              </div>
+            ) : (
+              <Upload
+                accept="image/*"
+                showUploadList={false}
+                beforeUpload={handlePhotoSelect}
+              >
+                <Button icon={<PictureOutlined />}>Выбрать фото</Button>
+              </Upload>
+            )}
+          </Form.Item>
+
           <div style={{ display: 'flex', gap: 12 }}>
             <Button
               type="primary"
@@ -93,7 +139,7 @@ export default function MessagesPage() {
             >
               Отправить
             </Button>
-            <Button onClick={() => form.resetFields()} disabled={loading}>
+            <Button onClick={() => { form.resetFields(); handleRemovePhoto(); }} disabled={loading}>
               Очистить
             </Button>
           </div>

@@ -135,7 +135,15 @@ export const subscriptionsAPI = {
   processExpired: () => api.post('/subscriptions/process-expired'),
   getUrl: (id: string) => api.get<{ success: boolean; data: { subscriptionUrl: string } }>(`/subscriptions/${id}/url`),
   delete: (id: string) => api.post(`/subscriptions/${id}/delete`),
-  sendMessage: (data: SendMessageDto) => api.post<SendMessageResponse>('/subscriptions/send-message', data),
+  sendMessage: (data: SendMessageDto, photo?: File) => {
+    const formData = new FormData();
+    formData.append('message', data.message);
+    if (data.telegramId) formData.append('telegramId', data.telegramId);
+    if (photo) formData.append('photo', photo);
+    return api.post<SendMessageResponse>('/subscriptions/send-message', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
   exportCsv: (params?: { search?: string; source?: string }) =>
     api.get('/subscriptions/export-csv', { params, responseType: 'blob' }),
   exportUniqueTelegramIds: () =>
