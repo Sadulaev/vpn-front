@@ -28,7 +28,7 @@ export default function PlansPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Plan | null>(null);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<Plan['planType']>('standard');
+  const [activeTab, setActiveTab] = useState<'standard' | 'anti-throttling' | 'additional'>('standard');
   const [form] = Form.useForm();
 
   const fetchPlans = async () => {
@@ -50,11 +50,14 @@ export default function PlansPage() {
   const openCreate = () => {
     setEditing(null);
     form.resetFields();
+    const isAdditionalTab = activeTab === 'additional';
+    const planType = isAdditionalTab ? 'standard' : activeTab;
     form.setFieldsValue({
-      planType: activeTab,
-      months: activeTab === 'standard' ? 1 : 0,
-      dataLimitGB: activeTab === 'anti-throttling' ? 10 : 0,
+      planType,
+      months: planType === 'standard' ? 1 : 0,
+      dataLimitGB: planType === 'anti-throttling' ? 10 : 0,
       isActive: true,
+      isMain: !isAdditionalTab,
       sortOrder: 0,
     });
     setModalOpen(true);
@@ -80,12 +83,13 @@ export default function PlansPage() {
     const values = await form.validateFields();
     setSaving(true);
     try {
-      const dto: CreatePlanDto = {
+    const dto: CreatePlanDto = {
         ...values,
         // Для Базового dataLimitGB всегда 0
         dataLimitGB: values.planType === 'standard' ? 0 : (values.dataLimitGB ?? 0),
         // Для Турбо months всегда 0
         months: values.planType === 'anti-throttling' ? 0 : (values.months ?? 1),
+        isMain: values.isMain ?? true,
       };
 
       if (editing) {
@@ -105,9 +109,20 @@ export default function PlansPage() {
   };
 
   const isAnti = activeTab === 'anti-throttling';
-  const filtered = plans.filter((p) => p.planType === activeTab);
+  const filtered = activeTab === 'additional'
+    ? plans.filter((p) => !p.isMain)
+    : plans.filter((p) => p.planType === activeTab && p.isMain);
 
   const columns = [
+    {
+      title: 'Тип',
+      dataIndex: 'planType',
+      key: 'planType',
+      render: (v: string, p: Plan) => {
+        if (!p.isMain) return <Tag color="purple">Доп.</Tag>;
+        return v === 'anti-throttling' ? <Tag color="orange">Турбо</Tag> : <Tag color="blue">Базовый</Tag>;
+      },
+    },
     {
       title: 'Название',
       dataIndex: 'label',
@@ -177,6 +192,10 @@ export default function PlansPage() {
       key: 'anti-throttling' as const,
       label: '⚡ Турбо (пакеты ГБ)',
     },
+    {
+      key: 'additional' as const,
+      label: '🔧 Дополнительные',
+    },
   ];
 
   const watchedType = Form.useWatch('planType', form);
@@ -192,7 +211,7 @@ export default function PlansPage() {
 
       <Tabs
         activeKey={activeTab}
-        onChange={(k) => setActiveTab(k as Plan['planType'])}
+        onChange={(k) => setActiveTab(k as 'standard' | 'anti-throttling' | 'additional')}
         items={tabItems}
       />
 
@@ -261,6 +280,9 @@ export default function PlansPage() {
 
           <Form.Item name="isActive" label="Активен" valuePropName="checked">
             <Switch checkedChildren="Виден в боте" unCheckedChildren="Скрыт" />
+          </Form.Item>
+          <Form.Item name="isMain" label="Тип" valuePropName="checked">
+            <Switch checkedChildren="Основная" unCheckedChildren="Дополнительная" />
           </Form.Item>
         </Form>
       </Modal>

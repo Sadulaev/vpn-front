@@ -173,6 +173,7 @@ export interface Plan {
   dataLimitGB: number;
   description: string | null;
   isActive: boolean;
+  isMain: boolean;
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
@@ -186,6 +187,7 @@ export interface CreatePlanDto {
   dataLimitGB?: number;
   description?: string;
   isActive?: boolean;
+  isMain?: boolean;
   sortOrder?: number;
 }
 
@@ -197,6 +199,35 @@ export const plansAPI = {
   create: (data: CreatePlanDto) => api.post<Plan>('/plans', data),
   update: (id: number, data: UpdatePlanDto) => api.patch<Plan>(`/plans/${id}`, data),
   remove: (id: number) => api.delete(`/plans/${id}`),
+};
+
+// Device Slot Plans API
+export interface DeviceSlotPlan {
+  id: number;
+  label: string;
+  slotsCount: number;
+  price: number;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateDeviceSlotPlanDto {
+  label: string;
+  slotsCount: number;
+  price: number;
+  isActive?: boolean;
+  sortOrder?: number;
+}
+
+export type UpdateDeviceSlotPlanDto = Partial<CreateDeviceSlotPlanDto>;
+
+export const deviceSlotPlansAPI = {
+  getAll: () => api.get<DeviceSlotPlan[]>('/device-slot-plans'),
+  create: (data: CreateDeviceSlotPlanDto) => api.post<DeviceSlotPlan>('/device-slot-plans', data),
+  update: (id: number, data: UpdateDeviceSlotPlanDto) => api.patch<DeviceSlotPlan>(`/device-slot-plans/${id}`, data),
+  remove: (id: number) => api.delete(`/device-slot-plans/${id}`),
 };
 
 export default api;

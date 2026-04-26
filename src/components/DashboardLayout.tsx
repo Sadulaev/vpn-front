@@ -9,6 +9,7 @@ import {
   MenuOutlined,
   SettingOutlined,
   UnorderedListOutlined,
+  LaptopOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -28,6 +29,7 @@ const DashboardLayout = () => {
   const menuItems = [
     { key: '/admin/subscriptions', icon: <FileTextOutlined />, label: 'Подписки' },
     { key: '/admin/plans', icon: <UnorderedListOutlined />, label: 'Тарифы' },
+    { key: '/admin/device-slots', icon: <LaptopOutlined />, label: 'Слоты устройств' },
     { key: '/admin/messages', icon: <MessageOutlined />, label: 'Рассылка' },
     { key: '/admin/payments', icon: <DollarOutlined />, label: 'Платежи' },
     { key: '/admin/settings', icon: <SettingOutlined />, label: 'Настройки' },
