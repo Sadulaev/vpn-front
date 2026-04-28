@@ -9,6 +9,7 @@ import PaymentsPage from './pages/PaymentsPage';
 import PlansPage from './pages/PlansPage';
 import DeviceSlotPlansPage from './pages/DeviceSlotPlansPage';
 import SettingsPage from './pages/SettingsPage';
+import BotPagesPage from './pages/BotPagesPage';
 import AppLayout from './app/AppLayout';
 import NotFoundPage from './app/pages/NotFoundPage';
 
@@ -40,6 +41,7 @@ function App() {
                 <Route path="plans" element={<PlansPage />} />
                 <Route path="device-slots" element={<DeviceSlotPlansPage />} />
                 <Route path="settings" element={<SettingsPage />} />
+                <Route path="bot-pages" element={<BotPagesPage />} />
               </Route>
               <Route path="*" element={<Navigate to="/admin" replace />} />
             </Routes>

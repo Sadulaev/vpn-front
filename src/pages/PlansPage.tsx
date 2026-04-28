@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import {
   Button,
   Modal,
@@ -87,7 +87,7 @@ export default function PlansPage() {
         ...values,
         // Для Базового dataLimitGB всегда 0
         dataLimitGB: values.planType === 'standard' ? 0 : (values.dataLimitGB ?? 0),
-        // Для Турбо months всегда 0
+        // Для Антиглушилка months всегда 0
         months: values.planType === 'anti-throttling' ? 0 : (values.months ?? 1),
         isMain: values.isMain ?? true,
       };
@@ -120,7 +120,7 @@ export default function PlansPage() {
       key: 'planType',
       render: (v: string, p: Plan) => {
         if (!p.isMain) return <Tag color="purple">Доп.</Tag>;
-        return v === 'anti-throttling' ? <Tag color="orange">Турбо</Tag> : <Tag color="blue">Базовый</Tag>;
+        return v === 'anti-throttling' ? <Tag color="orange">Антиглушилка</Tag> : <Tag color="blue">Базовый</Tag>;
       },
     },
     {
@@ -190,7 +190,7 @@ export default function PlansPage() {
     },
     {
       key: 'anti-throttling' as const,
-      label: '⚡ Турбо (пакеты ГБ)',
+      label: '⚡ Антиглушилка (пакеты ГБ)',
     },
     {
       key: 'additional' as const,
@@ -240,7 +240,7 @@ export default function PlansPage() {
             <Select
               options={[
                 { value: 'standard', label: '🌐 Базовый — безлимитный трафик, ограничен по времени' },
-                { value: 'anti-throttling', label: '⚡ Турбо — ограничен по ГБ, время неограниченно' },
+                { value: 'anti-throttling', label: '⚡ Антиглушилка — ограничен по ГБ, время неограниченно' },
               ]}
             />
           </Form.Item>

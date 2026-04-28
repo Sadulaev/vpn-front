@@ -230,4 +230,56 @@ export const deviceSlotPlansAPI = {
   remove: (id: number) => api.delete(`/device-slot-plans/${id}`),
 };
 
+// Bot Pages API
+export interface BotButton {
+  text: string;
+  callbackData?: string;
+  url?: string;
+}
+
+export interface BotPage {
+  id: number;
+  key: string;
+  title: string;
+  description: string | null;
+  text: string;
+  mediaType: 'none' | 'photo' | 'video';
+  mediaPath: string | null;
+  mediaTelegramFileId: string | null;
+  buttons: BotButton[][];
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateBotPageDto {
+  key: string;
+  title: string;
+  text?: string;
+  mediaType?: 'none' | 'photo' | 'video';
+  buttons?: BotButton[][];
+  sortOrder?: number;
+  description?: string;
+}
+
+export type UpdateBotPageDto = Partial<CreateBotPageDto>;
+
+export const botPagesAPI = {
+  getAll: () => api.get<BotPage[]>('/bot-pages'),
+  getOne: (id: number) => api.get<BotPage>(`/bot-pages/${id}`),
+  create: (data: CreateBotPageDto) => api.post<BotPage>('/bot-pages', data),
+  update: (id: number, data: UpdateBotPageDto) => api.put<BotPage>(`/bot-pages/${id}`, data),
+  uploadMedia: (id: number, file: File, mediaType: 'photo' | 'video') => {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('mediaType', mediaType);
+    return api.post<BotPage>(`/bot-pages/${id}/media`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  deleteMedia: (id: number) => api.delete<BotPage>(`/bot-pages/${id}/media`),
+  remove: (id: number) => api.delete(`/bot-pages/${id}`),
+  reorder: (ids: number[]) => api.patch('/bot-pages/reorder', { ids }),
+};
+
 export default api;

@@ -10,6 +10,7 @@ import {
   SettingOutlined,
   UnorderedListOutlined,
   LaptopOutlined,
+  RobotOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -32,6 +33,7 @@ const DashboardLayout = () => {
     { key: '/admin/device-slots', icon: <LaptopOutlined />, label: 'Слоты устройств' },
     { key: '/admin/messages', icon: <MessageOutlined />, label: 'Рассылка' },
     { key: '/admin/payments', icon: <DollarOutlined />, label: 'Платежи' },
+    { key: '/admin/bot-pages', icon: <RobotOutlined />, label: 'Страницы бота' },
     { key: '/admin/settings', icon: <SettingOutlined />, label: 'Настройки' },
   ];
 
