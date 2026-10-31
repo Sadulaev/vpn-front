@@ -11,6 +11,8 @@ import {
   UnorderedListOutlined,
   LaptopOutlined,
   RobotOutlined,
+  NodeIndexOutlined,
+  TeamOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -29,6 +31,8 @@ const DashboardLayout = () => {
 
   const menuItems = [
     { key: '/admin/subscriptions', icon: <FileTextOutlined />, label: 'Подписки' },
+    { key: '/admin/clients', icon: <TeamOutlined />, label: 'Клиенты' },
+    { key: '/admin/marzban', icon: <NodeIndexOutlined />, label: 'Сервера (Marzban)' },
     { key: '/admin/plans', icon: <UnorderedListOutlined />, label: 'Тарифы' },
     { key: '/admin/device-slots', icon: <LaptopOutlined />, label: 'Слоты устройств' },
     { key: '/admin/messages', icon: <MessageOutlined />, label: 'Рассылка' },
